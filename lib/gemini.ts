@@ -1,0 +1,304 @@
+import { z } from 'zod';
+import type { CalendarEvent } from './models/calendarEvent';
+import type { Proposal, ChangeItem, PreferenceSet } from './models/proposal';
+
+// Gemini API response schema
+const GeminiResponseSchema = z.object({
+  candidates: z.array(
+    z.object({
+      content: z.object({
+        parts: z.array(
+          z.object({
+            text: z.string(),
+          })
+        ),
+      }),
+    })
+  ),
+});
+
+// Configuration
+const GEMINI_API_URL =
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 1000;
+
+export interface GeminiConfig {
+  apiKey: string;
+  maxRetries?: number;
+  retryDelay?: number;
+}
+
+export class GeminiClient {
+  private config: Required<GeminiConfig>;
+
+  constructor(config: GeminiConfig) {
+    this.config = {
+      apiKey: config.apiKey,
+      maxRetries: config.maxRetries || MAX_RETRIES,
+      retryDelay: config.retryDelay || RETRY_DELAY_MS,
+    };
+  }
+
+  private async delay(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  private async makeRequest(prompt: string, attempt = 1): Promise<string> {
+    try {
+      const response = await fetch(
+        `${GEMINI_API_URL}?key=${this.config.apiKey}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  {
+                    text: prompt,
+                  },
+                ],
+              },
+            ],
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Gemini API error: ${response.status} ${response.statusText}`
+        );
+      }
+
+      const data = await response.json();
+      const parsed = GeminiResponseSchema.parse(data);
+
+      if (!parsed.candidates[0]?.content?.parts[0]?.text) {
+        throw new Error('No text response from Gemini API');
+      }
+
+      return parsed.candidates[0].content.parts[0].text;
+    } catch (error) {
+      if (attempt <= this.config.maxRetries) {
+        console.warn(
+          `Gemini request attempt ${attempt} failed, retrying...`,
+          error
+        );
+        await this.delay(this.config.retryDelay * attempt);
+        return this.makeRequest(prompt, attempt + 1);
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Generate a clarifying question based on problem text and previous answers
+   */
+  async generateClarifyingQuestion(
+    problemText: string,
+    answeredQuestions: string[] = []
+  ): Promise<string> {
+    const prompt = `
+You are an AI scheduling assistant. A user has described a scheduling problem: "${problemText}"
+
+${
+  answeredQuestions.length > 0
+    ? `They have already answered these questions:
+${answeredQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n')}`
+    : ''
+}
+
+Generate a single, specific clarifying question to better understand their scheduling needs. 
+Focus on practical details like:
+- Preferred times of day
+- Priority activities
+- Constraints or commitments
+- Goals (focus time, exercise, sleep, etc.)
+
+Return only the question, no additional text.
+`;
+
+    return this.makeRequest(prompt);
+  }
+
+  /**
+   * Generate a schedule proposal based on problem, clarifications, and current events
+   */
+  async generateProposal(params: {
+    problemText: string;
+    clarifications: string[];
+    events: CalendarEvent[];
+    preferences: PreferenceSet;
+  }): Promise<Proposal> {
+    const { problemText, clarifications, events, preferences } = params;
+
+    const prompt = `
+You are an AI scheduling assistant. Generate a schedule proposal in JSON format.
+
+Problem: "${problemText}"
+
+Clarifications provided:
+${clarifications.map((c, i) => `${i + 1}. ${c}`).join('\n')}
+
+Current events:
+${events.map((e) => `- "${e.title}" from ${e.start} to ${e.end} (${e.durationMinutes} min)`).join('\n')}
+
+User preferences:
+- Sleep target: ${preferences.sleepTargetHours} hours
+- Priorities: ${preferences.priorities.join(', ')}
+${preferences.protectedWindows.length > 0 ? `- Protected windows: ${preferences.protectedWindows.map((w) => `${w.label} (${w.start} - ${w.end})`).join(', ')}` : ''}
+
+Generate a proposal JSON with this exact structure:
+{
+  "id": "proposal-uuid",
+  "revision": 1,
+  "changes": [
+    {
+      "id": "change-uuid",
+      "type": "add|move|remove|adjust",
+      "event": {
+        "title": "Event title",
+        "start": "2025-10-04T09:00:00.000Z",
+        "end": "2025-10-04T10:00:00.000Z",
+        "durationMinutes": 60
+      },
+      "targetEventId": "existing-event-id-if-move-or-adjust",
+      "rationale": "Explanation of why this change helps",
+      "accepted": "pending"
+    }
+  ],
+  "summary": "High-level summary of the proposal",
+  "sleepAssessment": {
+    "estimatedSleepHours": 7.5,
+    "belowTarget": false
+  },
+  "status": "pending",
+  "createdAt": "${new Date().toISOString()}"
+}
+
+Rules:
+- Include at least 1 change, max 5 changes
+- Use realistic future timestamps
+- Each change needs a clear rationale
+- Sleep assessment should estimate based on last evening event to first morning event
+- Focus on addressing the user's stated problem
+
+Return only valid JSON, no additional text.
+`;
+
+    const response = await this.makeRequest(prompt);
+
+    try {
+      // Clean the response to extract JSON if wrapped in markdown or other text
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      const jsonStr = jsonMatch ? jsonMatch[0] : response;
+
+      const proposalData = JSON.parse(jsonStr);
+
+      // Validate the structure matches our schema
+      // Basic validation - full validation happens in the API route
+      if (
+        !proposalData.id ||
+        !proposalData.changes ||
+        !Array.isArray(proposalData.changes)
+      ) {
+        throw new Error('Invalid proposal structure from Gemini');
+      }
+
+      return proposalData as Proposal;
+    } catch (error) {
+      throw new Error(
+        `Failed to parse Gemini proposal response: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  /**
+   * Generate rationale for a specific schedule change
+   */
+  async generateRationale(
+    changeType: 'add' | 'move' | 'remove' | 'adjust',
+    eventTitle: string,
+    context: string
+  ): Promise<string> {
+    const prompt = `
+Explain in one sentence why this schedule change helps address the user's concern:
+
+Change: ${changeType} "${eventTitle}"
+Context: ${context}
+
+Return only the explanation, no additional text.
+`;
+
+    return this.makeRequest(prompt);
+  }
+}
+
+// Export convenience functions for common operations
+export const createGeminiClient = (apiKey?: string): GeminiClient => {
+  const key = apiKey || process.env.GEMINI_API_KEY;
+  if (!key) {
+    throw new Error('Gemini API key is required');
+  }
+  return new GeminiClient({ apiKey: key });
+};
+
+// Mock client for testing
+export class MockGeminiClient extends GeminiClient {
+  constructor() {
+    super({ apiKey: 'mock-key' });
+  }
+
+  async generateClarifyingQuestion(
+    problemText: string,
+    answeredQuestions: string[] = []
+  ): Promise<string> {
+    // Return mock clarifying questions based on input
+    if (answeredQuestions.length === 0) {
+      return 'What specific aspects of your schedule feel most problematic?';
+    }
+    return 'What time of day do you prefer for focused work?';
+  }
+
+  async generateProposal(params: {
+    problemText: string;
+    clarifications: string[];
+    events: CalendarEvent[];
+    preferences: PreferenceSet;
+  }): Promise<Proposal> {
+    // Return a mock proposal
+    return {
+      id: 'mock-proposal-id',
+      revision: 1,
+      changes: [
+        {
+          id: 'mock-change-1',
+          type: 'add',
+          event: {
+            title: 'Focus Block',
+            start: '2025-10-04T09:00:00.000Z',
+            end: '2025-10-04T11:00:00.000Z',
+            durationMinutes: 120,
+          },
+          rationale:
+            'Added dedicated focus time to address your scheduling concerns',
+          accepted: 'pending',
+        },
+      ],
+      summary: 'Added focus time to improve your schedule',
+      sleepAssessment: {
+        estimatedSleepHours: 7.5,
+        belowTarget: false,
+      },
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+    } as Proposal;
+  }
+
+  async generateRationale(): Promise<string> {
+    return 'This change helps optimize your schedule for better productivity';
+  }
+}

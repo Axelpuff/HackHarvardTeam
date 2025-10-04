@@ -1,10 +1,10 @@
-
 # Implementation Plan: AI Schedule Counseling Conversational Assistant
 
 **Branch**: `001-build-an-ai` | **Date**: 2025-10-04 | **Spec**: [/Users/axelsoderquist/development/HackHarvardTeam/specs/001-build-an-ai/spec.md]
 **Input**: Feature specification from `/specs/001-build-an-ai/spec.md`
 
 ## Execution Flow (/plan command scope)
+
 ```
 1. Load feature spec from Input path
    → If not found: ERROR "No feature spec at {path}"
@@ -27,13 +27,16 @@
 ```
 
 **IMPORTANT**: The /plan command STOPS at step 7. Phases 2-4 are executed by other commands:
+
 - Phase 2: /tasks command creates tasks.md
 - Phase 3-4: Implementation execution (manual or via tools)
 
 ## Summary
+
 Conversational assistant that ingests a user's Google Calendar (day/week), gathers clarifications about a scheduling concern, and proposes non-destructive schedule changes side-by-side. MVP emphasizes rapid, voice-driven dialogue, clear diff visualization, selective acceptance, and safe application of changes back to Google Calendar (Google Calendar remains the authoritative persistent store; no separate database). Technical approach: Single Next.js (TypeScript) app with Tailwind; Gemini prompts generate structured proposal JSON; ElevenLabs provides TTS for system utterances; OAuth Google Calendar integration for read/write with per-event atomic sync + retry/backoff.
 
 ## Technical Context
+
 **Language/Version**: TypeScript / Node 18 (Next.js latest)  
 **Primary Dependencies**: Next.js (App Router), Tailwind CSS, NextAuth.js (Google), Gemini API client (fetch), ElevenLabs TTS (REST), Zod (validation), (optional) Zustand or React Context only  
 **Storage**: No custom server DB; Google Calendar is authoritative persistent data store for events; localStorage for PreferenceSet; proposals/transcript transient in-memory state  
@@ -45,10 +48,12 @@ Conversational assistant that ingests a user's Google Calendar (day/week), gathe
 **Scale/Scope**: Hackathon demo (single user session; small calendars < 200 events considered)
 
 ## Constitution Check
+
 Initial Review (Pre-Phase 0): PASS  
-Post-Design Review (After Phase 1): PASS  
+Post-Design Review (After Phase 1): PASS
 
 Alignment:
+
 - Rapid Iteration: Single Next.js app, no microservices.
 - Scope Discipline: Only MVP FR list + selective acceptance (lightweight) + undo (single level).
 - Minimal Reliable Quality: Targeted tests (proposal schema, diff, sleep check) + smoke.
@@ -60,6 +65,7 @@ No violations requiring Complexity Tracking.
 ## Project Structure
 
 ### Documentation (this feature)
+
 ```
 specs/[###-feature]/
 ├── plan.md              # This file (/plan command output)
@@ -71,7 +77,9 @@ specs/[###-feature]/
 ```
 
 ios/ or android/
+
 ### Source Code (repository root)
+
 ```
 app/                         # Next.js app router
    (site)/
@@ -112,15 +120,17 @@ tests/
       openapi-validate.test.ts
 ```
 
-**Structure Decision**: Adopt consolidated single Next.js application with feature-oriented directories; API routes map directly to OpenAPI paths; minimal lib/* modules for logic separation consistent with hackathon timebox.
+**Structure Decision**: Adopt consolidated single Next.js application with feature-oriented directories; API routes map directly to OpenAPI paths; minimal lib/\* modules for logic separation consistent with hackathon timebox.
 
 ## Phase 0: Outline & Research
+
 1. **Extract unknowns from Technical Context** above:
    - For each NEEDS CLARIFICATION → research task
    - For each dependency → best practices task
    - For each integration → patterns task
 
 2. **Generate and dispatch research agents**:
+
    ```
    For each unknown in Technical Context:
      Task: "Research {unknown} for {feature context}"
@@ -136,7 +146,8 @@ tests/
 **Output**: research.md with all NEEDS CLARIFICATION resolved
 
 ## Phase 1: Design & Contracts
-*Prerequisites: research.md complete*
+
+_Prerequisites: research.md complete_
 
 1. **Extract entities from feature spec** → `data-model.md`:
    - Entity name, fields, relationships
@@ -166,35 +177,40 @@ tests/
    - Keep under 150 lines for token efficiency
    - Output to repository root
 
-**Output**: data-model.md, /contracts/*, failing tests, quickstart.md, agent-specific file
+**Output**: data-model.md, /contracts/\*, failing tests, quickstart.md, agent-specific file
 
 ## Phase 2: Task Planning Approach (Preview Only)
+
 Will transform: FR list + OpenAPI + data model into tasks. Emphasis on:
+
 1. Contract validation tests before route stubs.
 2. Schema & diff utilities before proposal generation integration.
 3. Conversation loop (clarify → generate) prior to selective acceptance UI.
 4. Sync + undo after base proposal display stable.
-Parallelization: Independent utility modules & unit tests flagged [P]; UI components after schemas to enable prop typing reuse.
-Expected Count: ~26 tasks (8 tests, 6 API route stubs, 5 UI components, 4 utilities, 2 integration flows, 1 polish/accessibility).
+   Parallelization: Independent utility modules & unit tests flagged [P]; UI components after schemas to enable prop typing reuse.
+   Expected Count: ~26 tasks (8 tests, 6 API route stubs, 5 UI components, 4 utilities, 2 integration flows, 1 polish/accessibility).
 
 ## Phase 3+: Future Implementation
-*These phases are beyond the scope of the /plan command*
+
+_These phases are beyond the scope of the /plan command_
 
 **Phase 3**: Task execution (/tasks command creates tasks.md)  
 **Phase 4**: Implementation (execute tasks.md following constitutional principles)  
 **Phase 5**: Validation (run tests, execute quickstart.md, performance validation)
 
 ## Complexity Tracking
-*Fill ONLY if Constitution Check has violations that must be justified*
 
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+_Fill ONLY if Constitution Check has violations that must be justified_
 
+| Violation                  | Why Needed         | Simpler Alternative Rejected Because |
+| -------------------------- | ------------------ | ------------------------------------ |
+| [e.g., 4th project]        | [current need]     | [why 3 projects insufficient]        |
+| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient]  |
 
 ## Progress Tracking
+
 **Phase Status**:
+
 - [x] Phase 0: Research complete (/plan command)
 - [x] Phase 1: Design complete (/plan command)
 - [x] Phase 2: Task planning approach documented (/plan command)
@@ -203,10 +219,12 @@ Expected Count: ~26 tasks (8 tests, 6 API route stubs, 5 UI components, 4 utilit
 - [ ] Phase 5: Validation passed
 
 **Gate Status**:
+
 - [x] Initial Constitution Check: PASS
 - [x] Post-Design Constitution Check: PASS
 - [x] All NEEDS CLARIFICATION resolved
 - [x] Complexity deviations documented (none)
 
 ---
-*Based on Constitution v1.0.0 - See `/memory/constitution.md`*
+
+_Based on Constitution v1.0.0 - See `/memory/constitution.md`_

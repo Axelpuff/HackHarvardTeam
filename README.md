@@ -20,16 +20,19 @@ This project provides a comprehensive integration with the 11Labs Speech-to-Text
 ### 1. Install Dependencies
 
 **Option A: Minimal Installation (Recommended for Windows)**
+
 ```bash
 python minimal_setup.py
 ```
 
 **Option B: Full Installation (if you have Windows Long Path support enabled)**
+
 ```bash
 python install_simple.py
 ```
 
 **Option C: Manual Installation**
+
 ```bash
 pip install -r requirements.txt
 ```
@@ -49,11 +52,13 @@ Get your API key from [11Labs](https://elevenlabs.io/).
 ### 3. Verify Installation
 
 **For Minimal Setup:**
+
 ```bash
 python simple_client.py
 ```
 
 **For Full Setup:**
+
 ```bash
 python example_usage.py
 ```
@@ -63,6 +68,7 @@ python example_usage.py
 ### Basic Usage
 
 **Minimal Setup (Recommended):**
+
 ```python
 from simple_client import SimpleElevenLabsClient
 
@@ -82,6 +88,7 @@ else:
 ```
 
 **Full Setup:**
+
 ```python
 from speech_to_text_service import SpeechToTextService
 
