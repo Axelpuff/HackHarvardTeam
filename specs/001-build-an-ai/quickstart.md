@@ -40,6 +40,8 @@ GOOGLE_CALENDAR_SCOPES=https://www.googleapis.com/auth/calendar.events
   - Rationale visible on hover/click
   - WCAG AA contrast (use browser extension quick check)
   - Undo restores original calendar diff state
+  - After Apply, confirm events actually appear/are updated in the connected Google Calendar (open calendar.google.com in another tab and refresh). Added events have correct title/start/end; moved/adjusted events reflect new times.
+  - Optional: Perform Undo then refresh Google Calendar and confirm the reverted events reflect prior state.
 
 ## Error Simulation
 - Revoke Calendar permissions in Google account → attempt Apply → expect error notice and no changes.
@@ -50,4 +52,4 @@ GOOGLE_CALENDAR_SCOPES=https://www.googleapis.com/auth/calendar.events
 - Clear preferences: click "Reset Preferences" in settings panel.
 
 ## Notes
-This is an MVP; data not persisted server-side. Refreshing clears proposals/transcript except preferences.
+This is an MVP. No separate database is used; authoritative schedule data persists in Google Calendar via the Apply action (write operations: create/update/delete). Ephemeral conversational artifacts (proposals, transcript) are held in memory and cleared on refresh; user preferences persist locally (localStorage). This enables demonstrating real sync back to Google Calendar without maintaining additional server-side storage.

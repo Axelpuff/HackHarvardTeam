@@ -23,9 +23,14 @@ Rationale: Next.js API routes suffice for Calendar + Gemini + ElevenLabs proxy c
 Alternatives: Separate Express/FastAPI backend (rejected: extra infra/overhead), serverless functions outside Next (rejected: fragmentation).  
 
 ### 2. Data Handling & State
-Decision: Client state managed with React server components + client components; transient conversational state (transcript, problem statement, proposals) in a lightweight state store (Zustand) or React Context (Choose Context to avoid adding dependency unless complexity grows).  
-Rationale: Simplicity + minimal new dependencies; hackathon speed.  
-Alternatives: Redux Toolkit (overhead), XState for dialog (powerful but time cost).  
+Decision: Client state managed with React server components + client components; transient conversational state (transcript, problem statement, proposals) in a lightweight state store (React Context initially). Google Calendar itself is the authoritative persistent store for schedule data—no separate application database; preferences persist locally (localStorage).  
+Rationale: Simplicity + minimal new dependencies; leverages existing reliable persistence (Calendar) while avoiding DB setup overhead; aligns with hackathon timebox.  
+Alternatives: Redux Toolkit (overhead), XState for dialog (powerful but time cost), adding a server DB (adds infra, migration, security surface with little MVP value).  
+
+### 2b. Persistence Strategy (Explicit)
+Decision: Persist only applied event changes directly to Google Calendar via per-event API mutations (create/update/delete). Do not persist proposals or transcripts server-side; they reset on refresh. Single-level undo relies on in-memory reversal, not historical storage.  
+Rationale: Meets demonstration goal of real bidirectional sync while constraining scope; reduces privacy risk and complexity.  
+Alternatives: Server-side session store (would enable multi-device resume but out-of-scope), full event shadow copy DB (duplicate source of truth, adds consistency challenges).  
 
 ### 3. Proposal Generation Strategy
 Decision: Prompt-engineered Gemini calls producing a structured change list (JSON schema) given: Current Events, User Goal(s), Clarifications, Preferences. Heuristic validations applied client/server (sleep window, long event confirmations).  

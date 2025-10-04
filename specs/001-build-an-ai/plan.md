@@ -31,12 +31,12 @@
 - Phase 3-4: Implementation execution (manual or via tools)
 
 ## Summary
-Conversational assistant that ingests a user's Google Calendar (day/week), gathers clarifications about a scheduling concern, and proposes non-destructive schedule changes side-by-side. MVP emphasizes rapid, voice-driven dialogue, clear diff visualization, selective acceptance, and safe application of changes back to Google Calendar. Technical approach: Single Next.js (TypeScript) app with Tailwind; Gemini prompts generate structured proposal JSON; ElevenLabs provides TTS for system utterances; OAuth Google Calendar integration for read/write with per-event atomic sync + retry/backoff.
+Conversational assistant that ingests a user's Google Calendar (day/week), gathers clarifications about a scheduling concern, and proposes non-destructive schedule changes side-by-side. MVP emphasizes rapid, voice-driven dialogue, clear diff visualization, selective acceptance, and safe application of changes back to Google Calendar (Google Calendar remains the authoritative persistent store; no separate database). Technical approach: Single Next.js (TypeScript) app with Tailwind; Gemini prompts generate structured proposal JSON; ElevenLabs provides TTS for system utterances; OAuth Google Calendar integration for read/write with per-event atomic sync + retry/backoff.
 
 ## Technical Context
 **Language/Version**: TypeScript / Node 18 (Next.js latest)  
 **Primary Dependencies**: Next.js (App Router), Tailwind CSS, NextAuth.js (Google), Gemini API client (fetch), ElevenLabs TTS (REST), Zod (validation), (optional) Zustand or React Context only  
-**Storage**: None server-side; localStorage for PreferenceSet; transient in-memory state  
+**Storage**: No custom server DB; Google Calendar is authoritative persistent data store for events; localStorage for PreferenceSet; proposals/transcript transient in-memory state  
 **Testing**: Vitest (unit), Playwright (smoke/integration), inline assertions  
 **Target Platform**: Web (desktop Chrome for demo; fallback text input for unsupported speech browsers)  
 **Project Type**: Single web application (frontend + lightweight API routes)  
