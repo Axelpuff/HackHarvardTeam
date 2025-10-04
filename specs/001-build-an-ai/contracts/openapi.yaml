@@ -1,0 +1,252 @@
+openapi: 3.1.0
+info:
+  title: AI Schedule Counseling API
+  version: 0.1.0
+  description: >-
+    Minimal REST contracts for conversational scheduling assistant.
+    Implementation via Next.js API routes. All responses JSON unless otherwise noted.
+servers:
+  - url: https://example.com/api
+    description: Placeholder base URL (Next.js deployment)
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [ok, code, message]
+      properties:
+        ok:
+          type: boolean
+          const: false
+        code:
+          type: string
+          description: Stable machine error code
+        message:
+          type: string
+    TranscriptEntry:
+      type: object
+      required: [id, role, text, timestamp]
+      properties:
+        id: { type: string }
+        role: { type: string, enum: [user, system] }
+        text: { type: string }
+        timestamp: { type: string, format: date-time }
+    CalendarEvent:
+      type: object
+      required: [id, title, start, end, durationMinutes]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        start: { type: string, format: date-time }
+        end: { type: string, format: date-time }
+        durationMinutes: { type: integer }
+    ChangeItem:
+      type: object
+      required: [id, type, event, rationale]
+      properties:
+        id: { type: string }
+        type: { type: string, enum: [add, move, remove, adjust] }
+        event:
+          type: object
+          required: [title, start, end, durationMinutes]
+          properties:
+            title: { type: string }
+            start: { type: string, format: date-time }
+            end: { type: string, format: date-time }
+            durationMinutes: { type: integer }
+        targetEventId: { type: string, nullable: true }
+        rationale: { type: string }
+        accepted: { type: string, enum: [pending, accepted, rejected], nullable: true }
+    Proposal:
+      type: object
+      required: [id, revision, changes, summary, sleepAssessment, status]
+      properties:
+        id: { type: string }
+        revision: { type: integer, minimum: 1 }
+        changes:
+          type: array
+          items: { $ref: '#/components/schemas/ChangeItem' }
+          minItems: 1
+        summary: { type: string }
+        sleepAssessment:
+          type: object
+          required: [estimatedSleepHours, belowTarget]
+          properties:
+            estimatedSleepHours: { type: number }
+            belowTarget: { type: boolean }
+        status: { type: string, enum: [draft, pending, approved, applied, discarded] }
+    GenerateProposalRequest:
+      type: object
+      required: [problemText, events, preferences]
+      properties:
+        problemText: { type: string }
+        clarifications:
+          type: array
+          items: { type: string }
+        events:
+          type: array
+          items: { $ref: '#/components/schemas/CalendarEvent' }
+        preferences:
+          type: object
+          properties:
+            sleepTargetHours: { type: number }
+            priorities:
+              type: array
+              items: { type: string }
+    GenerateProposalResponse:
+      type: object
+      required: [ok, proposal]
+      properties:
+        ok: { type: boolean, const: true }
+        proposal: { $ref: '#/components/schemas/Proposal' }
+    ApplyProposalRequest:
+      type: object
+      required: [proposalId]
+      properties:
+        proposalId: { type: string }
+        selectiveChangeIds:
+          type: array
+          items: { type: string }
+          description: Optional subset list for selective acceptance
+    ApplyProposalResponse:
+      type: object
+      required: [ok, appliedChangeIds, failed]
+      properties:
+        ok: { type: boolean }
+        appliedChangeIds:
+          type: array
+          items: { type: string }
+        failed:
+          type: array
+          items:
+            type: object
+            required: [changeId, code, message]
+            properties:
+              changeId: { type: string }
+              code: { type: string }
+              message: { type: string }
+    UndoRequest:
+      type: object
+      required: [proposalId]
+      properties:
+        proposalId: { type: string }
+    UndoResponse:
+      type: object
+      required: [ok, reverted]
+      properties:
+        ok: { type: boolean }
+        reverted: { type: boolean }
+paths:
+  /conversation/clarify:
+    post:
+      summary: Generate a clarifying question
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [problemText, answeredQuestions]
+              properties:
+                problemText: { type: string }
+                answeredQuestions:
+                  type: array
+                  items: { type: string }
+      responses:
+        '200':
+          description: Clarifying question generated
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, question]
+                properties:
+                  ok: { type: boolean, const: true }
+                  question: { type: string }
+        '400': { description: Bad Request, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+  /proposal/generate:
+    post:
+      summary: Generate or update a schedule proposal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/GenerateProposalRequest' }
+      responses:
+        '200':
+          description: Proposal generated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GenerateProposalResponse' }
+        '422':
+          description: Invalid model output
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /proposal/apply:
+    post:
+      summary: Apply (sync) a proposal to Google Calendar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ApplyProposalRequest' }
+      responses:
+        '200':
+          description: Proposal application result
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApplyProposalResponse' }
+  /proposal/undo:
+    post:
+      summary: Undo last applied proposal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UndoRequest' }
+      responses:
+        '200':
+          description: Undo result
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UndoResponse' }
+  /tts/speak:
+    post:
+      summary: Convert text to speech (streams audio)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                text: { type: string }
+                voiceId: { type: string }
+      responses:
+        '200':
+          description: Audio stream (mp3)
+          content:
+            audio/mpeg: { schema: { type: string, format: binary } }
+  /calendar/events:
+    get:
+      summary: List events for current context (day/week)
+      parameters:
+        - in: query
+          name: scope
+          schema: { type: string, enum: [day, week] }
+          required: true
+      responses:
+        '200':
+          description: Events list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, events]
+                properties:
+                  ok: { type: boolean, const: true }
+                  events:
+                    type: array
+                    items: { $ref: '#/components/schemas/CalendarEvent' }
+
