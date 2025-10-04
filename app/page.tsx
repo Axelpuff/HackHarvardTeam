@@ -11,8 +11,12 @@ export default function HomePage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <div 
+            className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"
+            role="status"
+            aria-label="Loading application"
+          ></div>
+          <p className="text-gray-600" aria-live="polite">Loading...</p>
         </div>
       </div>
     );
@@ -21,7 +25,7 @@ export default function HomePage() {
   if (!session) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
+        <main className="max-w-md w-full bg-white rounded-lg shadow-md p-8" role="main">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
               AI Schedule Counseling Assistant
@@ -31,12 +35,13 @@ export default function HomePage() {
             </p>
             <button
               onClick={() => signIn('google')}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+              aria-label="Sign in with Google to access calendar integration"
             >
               Sign in with Google
             </button>
           </div>
-        </div>
+        </main>
       </div>
     );
   }
@@ -44,52 +49,53 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-white shadow-sm border-b" role="banner">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <h1 className="text-xl font-semibold text-gray-900">
               AI Schedule Assistant
             </h1>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">
+            <nav className="flex items-center space-x-4" role="navigation" aria-label="User navigation">
+              <span className="text-sm text-gray-600" aria-label={`Signed in as ${session.user?.email}`}>
                 {session.user?.email}
               </span>
               <button
                 onClick={() => signOut()}
-                className="text-sm text-gray-500 hover:text-gray-700"
+                className="text-sm text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded px-2 py-1 transition-colors"
+                aria-label="Sign out of your account"
               >
                 Sign out
               </button>
-            </div>
+            </nav>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" role="main">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Calendar Panel - Current Events */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm border h-96">
+          <section className="lg:col-span-1" aria-labelledby="current-schedule-heading">
+            <div className="bg-white rounded-lg shadow-sm border h-96" data-testid="calendar-current">
               <div className="p-4 border-b">
-                <h2 className="text-lg font-medium text-gray-900">
+                <h2 id="current-schedule-heading" className="text-lg font-medium text-gray-900">
                   Current Schedule
                 </h2>
               </div>
-              <div className="p-4">
+              <div className="p-4" role="region" aria-label="Current calendar events">
                 <div className="text-center text-gray-500 mt-8">
                   <p>Your current events will appear here</p>
                   <p className="text-sm mt-2">Connect and start a conversation to load events</p>
                 </div>
               </div>
             </div>
-          </div>
+          </section>
 
           {/* Conversation Panel */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm border h-96">
+          <section className="lg:col-span-1" aria-labelledby="conversation-heading">
+            <div className="bg-white rounded-lg shadow-sm border h-96" data-testid="conversation-panel">
               <div className="p-4 border-b">
-                <h2 className="text-lg font-medium text-gray-900">
+                <h2 id="conversation-heading" className="text-lg font-medium text-gray-900">
                   Conversation
                 </h2>
               </div>
@@ -102,7 +108,8 @@ export default function HomePage() {
                       </p>
                       <button
                         onClick={() => setIsConversationActive(true)}
-                        className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                        aria-label="Start a conversation with the AI schedule assistant"
                       >
                         Start Conversation
                       </button>
@@ -110,58 +117,88 @@ export default function HomePage() {
                   </div>
                 ) : (
                   <div className="flex-1 flex flex-col">
-                    <div className="flex-1 overflow-y-auto mb-4 p-2 bg-gray-50 rounded">
-                      <div className="text-sm text-gray-600 mb-2">
-                        System: Hi! I'm here to help you optimize your schedule. What scheduling challenge are you facing?
+                    <div 
+                      className="flex-1 overflow-y-auto mb-4 p-2 bg-gray-50 rounded"
+                      role="log"
+                      aria-label="Conversation transcript"
+                      aria-live="polite"
+                      data-testid="conversation-transcript"
+                    >
+                      <div className="text-sm text-gray-600 mb-2" role="listitem">
+                        <span className="font-semibold">System:</span> Hi! I'm here to help you optimize your schedule. What scheduling challenge are you facing?
                       </div>
                     </div>
-                    <div className="flex space-x-2">
+                    <form className="flex space-x-2" onSubmit={(e) => e.preventDefault()}>
+                      <label htmlFor="message-input" className="sr-only">
+                        Type your message to the AI assistant
+                      </label>
                       <input
+                        id="message-input"
                         type="text"
                         placeholder="Type your message or use voice..."
                         className="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        aria-describedby="message-help"
                       />
-                      <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                      <span id="message-help" className="sr-only">
+                        Enter your scheduling question or concern to get personalized assistance
+                      </span>
+                      <button 
+                        type="submit"
+                        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                        aria-label="Send message to AI assistant"
+                      >
                         Send
                       </button>
-                    </div>
+                    </form>
                   </div>
                 )}
               </div>
             </div>
-          </div>
+          </section>
 
           {/* Proposal Panel - Proposed Changes */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm border h-96">
+          <section className="lg:col-span-1" aria-labelledby="proposals-heading">
+            <div className="bg-white rounded-lg shadow-sm border h-96" data-testid="calendar-proposed">
               <div className="p-4 border-b">
-                <h2 className="text-lg font-medium text-gray-900">
+                <h2 id="proposals-heading" className="text-lg font-medium text-gray-900">
                   Proposed Changes
                 </h2>
               </div>
-              <div className="p-4">
+              <div className="p-4" role="region" aria-label="Proposed schedule changes">
                 <div className="text-center text-gray-500 mt-8">
                   <p>Schedule proposals will appear here</p>
                   <p className="text-sm mt-2">Start a conversation to generate suggestions</p>
                 </div>
               </div>
             </div>
-          </div>
+          </section>
         </div>
 
         {/* Action Buttons */}
         {isConversationActive && (
-          <div className="mt-8 flex justify-center space-x-4">
-            <button className="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50">
-              Apply Changes
-            </button>
-            <button className="bg-gray-600 text-white px-6 py-2 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
-              Undo Last Apply
-            </button>
-            <button className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-              Export Transcript
-            </button>
-          </div>
+          <section className="mt-8" aria-label="Schedule management actions">
+            <div className="flex justify-center space-x-4" role="group">
+              <button 
+                className="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 transition-colors"
+                aria-label="Apply selected schedule changes to your Google Calendar"
+                disabled
+              >
+                Apply Changes
+              </button>
+              <button 
+                className="bg-gray-600 text-white px-6 py-2 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
+                aria-label="Undo the last applied changes to your calendar"
+              >
+                Undo Last Apply
+              </button>
+              <button 
+                className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                aria-label="Export conversation transcript as text file"
+              >
+                Export Transcript
+              </button>
+            </div>
+          </section>
         )}
       </main>
     </div>

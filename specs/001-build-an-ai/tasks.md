@@ -201,17 +201,17 @@ T080 [X] Add unit tests for proposal schema and diff utilities
 - Path: `/Users/axelsoderquist/development/HackHarvardTeam/tests/unit/test_proposal_schema.test.ts`, `/Users/axelsoderquist/development/HackHarvardTeam/tests/unit/test_diff.test.ts`
 - Action: Ensure `lib/proposal-schema.ts` and `lib/diff.ts` validated; aim for quick test coverage on schema correctness and sleep estimation.
 
-T081 Add Playwright smoke test for quickstart flow (manual / automation)
+T081 [X] Add Playwright smoke test for quickstart flow (manual / automation)
 
 - Path: `/Users/axelsoderquist/development/HackHarvardTeam/tests/e2e/quickstart.spec.ts`
 - Action: Launch dev server, sign-in flow can be mocked, simulate conversation and apply; this is a smoke test and can be run after core routes implemented.
 
-T090 [P] Documentation: Update `README.md` and add `specs/001-build-an-ai/tasks.md` usage notes
+T090 [X][P] Documentation: Update `README.md` and add `specs/001-build-an-ai/tasks.md` usage notes
 
 - Path: `/Users/axelsoderquist/development/HackHarvardTeam/README.md`, `/Users/axelsoderquist/development/HackHarvardTeam/specs/001-build-an-ai/tasks.md`
 - Action: Add run instructions, env var examples (from quickstart.md), how to run tests.
 
-T091 [P] Polish: Accessibility checks, color contrast, and UX tweaks
+T091 [X][P] Polish: Accessibility checks, color contrast, and UX tweaks
 
 - Path: `/Users/axelsoderquist/development/HackHarvardTeam/app/`, `/Users/axelsoderquist/development/HackHarvardTeam/components/`
 - Action: Ensure WCAG AA contrast and keyboard navigation on major UI components.
@@ -247,6 +247,87 @@ Example Task agent commands (copyable):
 - Contracts → Tests: All OpenAPI paths in `specs/001-build-an-ai/contracts/openapi.yaml` mapped to contract test tasks (T010-T015). (Done)
 - Data model → Models: Each entity in `data-model.md` mapped to a model/schema task (T030-T032). (Done)
 - User flows/quickstart → Integration tests: Quickstart scenarios mapped to integration tests (T020, T021). (Done)
+
+## Usage Notes & Instructions
+
+### Environment Setup
+
+Before running the application, ensure you have the required environment variables:
+
+```bash
+# Copy the example file
+cp .env.local.example .env.local
+
+# Edit with your actual API keys
+GOOGLE_CLIENT_ID=...apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=...
+NEXTAUTH_SECRET=dev-secret-change-in-production
+ELEVENLABS_API_KEY=sk_...
+GEMINI_API_KEY=...
+GOOGLE_CALENDAR_SCOPES=https://www.googleapis.com/auth/calendar.events
+```
+
+### Running the Application
+
+```bash
+# Install dependencies (if not done)
+npm install
+
+# Start development server
+npm run dev
+
+# Open http://localhost:3000
+```
+
+### Running Tests
+
+The test suite is organized into multiple layers:
+
+```bash
+# Run all tests
+npm test
+
+# Run specific test suites
+npm run test:unit        # Models, schemas, utilities (fast)
+npm run test:contract    # API endpoint validation (medium) 
+npm run test:integration # Full workflow tests (medium)
+npm run test:e2e         # Browser automation (slow)
+
+# Watch mode for development
+npm run test:watch
+```
+
+### Test Execution Order
+
+For CI/CD or comprehensive validation, run tests in this order:
+
+1. **Unit tests first**: `npm run test:unit` - validates core logic
+2. **Contract tests**: `npm run test:contract` - ensures API compliance  
+3. **Integration tests**: `npm run test:integration` - validates workflows
+4. **E2E tests**: `npm run test:e2e` - full browser testing
+
+### Development Workflow
+
+1. **Setup environment** variables (see above)
+2. **Run failing tests** to understand expected behavior
+3. **Implement features** to make tests pass
+4. **Run full test suite** before committing changes
+5. **Check accessibility** with browser dev tools
+
+### Debugging
+
+- Use `NODE_ENV=development` for detailed logging
+- Contract tests run against local server on port 3000
+- Integration tests mock external APIs (Google Calendar, ElevenLabs)
+- Check `tests/setup.ts` for test configuration
+
+### Performance Monitoring
+
+Key metrics to monitor during development:
+- Clarifying question response time: < 2s target
+- Proposal generation: < 60s target  
+- TTS audio start: < 1.5s target
+- Calendar sync operations: exponential backoff on failures
 
 ## Next steps I will take
 
