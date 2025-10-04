@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { TranscriptEntry } from '@/lib/models/proposal';
+import { TTSButton } from './TTSButton';
 
 interface ConversationPanelProps {
   transcript: TranscriptEntry[];
@@ -118,14 +119,27 @@ export function ConversationPanel({
                       : 'bg-white border shadow-sm'
                   }`}
                 >
-                  <p className="text-sm">{entry.text}</p>
-                  <p
-                    className={`text-xs mt-1 ${
-                      entry.role === 'user' ? 'text-blue-100' : 'text-gray-500'
-                    }`}
-                  >
-                    {formatTime(entry.timestamp)}
-                  </p>
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <p className="text-sm">{entry.text}</p>
+                      <p
+                        className={`text-xs mt-1 ${
+                          entry.role === 'user' ? 'text-blue-100' : 'text-gray-500'
+                        }`}
+                      >
+                        {formatTime(entry.timestamp)}
+                      </p>
+                    </div>
+                    {entry.role === 'assistant' && (
+                      <div className="ml-2 flex-shrink-0">
+                        <TTSButton
+                          text={entry.text}
+                          size="sm"
+                          className="opacity-70 hover:opacity-100 transition-opacity"
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             ))
