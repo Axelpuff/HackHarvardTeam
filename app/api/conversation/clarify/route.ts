@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
 
     // Create Gemini client (use mock in test environment)
     const geminiClient =
-      process.env.NODE_ENV === 'test'
+      process.env.VITEST === 'true'
         ? new MockGeminiClient()
         : createGeminiClient();
 

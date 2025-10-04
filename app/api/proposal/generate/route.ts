@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     console.log('Received proposal generation request:', requestData);
     // Create Gemini client (use mock in test environment)
     const geminiClient =
-      process.env.NODE_ENV === 'test'
+      process.env.VITEST === 'true'
         ? new MockGeminiClient()
         : createGeminiClient();
     console.log('Using Gemini client:', geminiClient instanceof MockGeminiClient ? 'MockGeminiClient' : 'RealGeminiClient');

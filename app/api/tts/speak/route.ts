@@ -26,11 +26,11 @@ export async function POST(request: NextRequest) {
     // Check if test mode is enabled
     const url = new URL(request.url);
     const testMode =
-      url.searchParams.get('test') === '1' || process.env.NODE_ENV === 'test';
+      url.searchParams.get('test') === '1' || process.env.VITEST === 'true';
 
     // Create ElevenLabs client (use mock in test environment)
     const ttsClient =
-      testMode || process.env.NODE_ENV === 'test'
+      testMode || process.env.VITEST === 'true'
         ? new MockElevenLabsClient()
         : createElevenLabsClient();
 

@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
 
     // Create Google Calendar client (use mock in test environment)
     let accessToken = 'mock-token';
-    if (process.env.NODE_ENV !== 'test') {
+    if (process.env.VITEST !== 'true') {
       // In production, would get access token from session
       // For now, using mock token
       // const session = await getServerSession();
@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
     }
     
     const calendarClient =
-      process.env.NODE_ENV === 'test'
+      process.env.VITEST === 'true'
         ? (() => {
             const mockClient = new MockGoogleCalendarClient();
             // Set some mock events for testing

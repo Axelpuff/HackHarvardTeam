@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
 
     // Get session for authentication (mocked in test environment)
     let accessToken = 'mock-token';
-    if (process.env.NODE_ENV !== 'test') {
+    if (process.env.VITEST !== 'true') {
       // TODO: Implement proper NextAuth session handling
       // const session = await getServerSession();
       // if (!session?.accessToken) {
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
     let proposal = proposalStore.get(proposalId);
     if (!proposal) {
       // For testing, create a mock proposal if it doesn't exist
-      if (process.env.NODE_ENV === 'test') {
+      if (process.env.VITEST === 'true') {
         proposal = getMockProposal(proposalId);
         proposalStore.set(proposalId, proposal);
       } else {
@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
 
     // Create Google Calendar client (use mock in test environment)
     const calendarClient =
-      process.env.NODE_ENV === 'test'
+      process.env.VITEST === 'true'
         ? new MockGoogleCalendarClient()
         : createGoogleCalendarClient(accessToken);
 
