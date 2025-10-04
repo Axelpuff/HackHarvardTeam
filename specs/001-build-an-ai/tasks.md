@@ -124,37 +124,37 @@ T042 [X][P] Implement `lib/proposal-schema.ts` Zod validators used in API routes
 
 API route stubs (implementations may be minimal to satisfy tests)
 
-T050 Implement API route: `app/api/conversation/clarify/route.ts` (POST)
+T050 [X] Implement API route: `app/api/conversation/clarify/route.ts` (POST)
 
 - Path: `/Users/axelsoderquist/development/HackHarvardTeam/app/api/conversation/clarify/route.ts`
 - Action: Read request, call `lib/gemini.ts` to generate question text (for now return mock question), validate input, and respond with `{ ok: true, question }`.
 - Dependency: Requires T032 (schemas) and T040 (gemini) for validation.
 
-T051 Implement API route: `app/api/proposal/generate/route.ts` (POST)
+T051 [X] Implement API route: `app/api/proposal/generate/route.ts` (POST)
 
 - Path: `/Users/axelsoderquist/development/HackHarvardTeam/app/api/proposal/generate/route.ts`
 - Action: Accept `GenerateProposalRequest`, run schema validation, call `lib/gemini.ts` (or mocked generator) to produce a `Proposal` object, validate with `lib/proposal-schema.ts` and return `GenerateProposalResponse`.
 - Dependency: T032, T040, T042
 
-T052 Implement API route: `app/api/proposal/apply/route.ts` (POST)
+T052 [X] Implement API route: `app/api/proposal/apply/route.ts` (POST)
 
 - Path: `/Users/axelsoderquist/development/HackHarvardTeam/app/api/proposal/apply/route.ts`
 - Action: Accept `ApplyProposalRequest`, map `ChangeItem`s to Google Calendar API calls (use `lib/google-calendar.ts` stub/mock for tests), perform per-event atomic ops with retry/backoff, return `ApplyProposalResponse`.
 - Dependency: T032, T041 (for audio consent flow UI), T040 (if rationale summaries are required)
 
-T053 Implement API route: `app/api/proposal/undo/route.ts` (POST)
+T053 [X] Implement API route: `app/api/proposal/undo/route.ts` (POST)
 
 - Path: `/Users/axelsoderquist/development/HackHarvardTeam/app/api/proposal/undo/route.ts`
 - Action: Use in-memory last-applied snapshot to revert changes; return `UndoResponse`.
 - Dependency: T052
 
-T054 Implement API route: `app/api/tts/speak/route.ts` (POST)
+T054 [X] Implement API route: `app/api/tts/speak/route.ts` (POST)
 
 - Path: `/Users/axelsoderquist/development/HackHarvardTeam/app/api/tts/speak/route.ts`
 - Action: Accept text, call `lib/elevenlabs-tts.ts`, stream or return audio response. For testability, support a JSON response mode when `TEST_MODE=1`.
 - Dependency: T041
 
-T055 Implement API route: `app/api/calendar/events/route.ts` (GET)
+T055 [X] Implement API route: `app/api/calendar/events/route.ts` (GET)
 
 - Path: `/Users/axelsoderquist/development/HackHarvardTeam/app/api/calendar/events/route.ts`
 - Action: Read query `scope` (day|week), call `lib/google-calendar.ts` mock/stub to return events in schema.
@@ -168,31 +168,31 @@ T060 [X] Implement `lib/google-calendar.ts` calendar client (mockable)
 - Action: Wrapper for Google Calendar REST calls; supports create/update/delete/list; include retry/backoff logic and structured error objects for Apply route to return `failed` list.
 - Notes: In tests this should be mocked to avoid network.
 
-T061 Add NextAuth.js setup for Google OAuth (server-side)
+T061 [X] Add NextAuth.js setup for Google OAuth (server-side)
 
 - Path: `/Users/axelsoderquist/development/HackHarvardTeam/app/api/auth/[...nextauth]/route.ts`, and NextAuth config in `/Users/axelsoderquist/development/HackHarvardTeam/lib/auth.ts`
 - Action: Implement basic Google provider session handling; ensure calendar scopes requested match `quickstart.md`.
 
-T062 Implement local storage helper for `PreferenceSet`
+T062 [X] Implement local storage helper for `PreferenceSet`
 
 - Path: `/Users/axelsoderquist/development/HackHarvardTeam/lib/preferences.ts`
 - Action: Simple wrapper to persist and validate preferences via Zod.
 
 Frontend minimal UI (to enable quick smoke tests)
 
-T070 Add `app/page.tsx` landing with two panels + Start Conversation button
+T070 [X] Add `app/page.tsx` landing with two panels + Start Conversation button
 
 - Path: `/Users/axelsoderquist/development/HackHarvardTeam/app/page.tsx`
 - Action: Minimal UI that can call the routes above; stubbed components acceptable for MVP smoke tests.
 
-T071 Add `components/ConversationPanel.tsx`, `components/CalendarPanel.tsx`, `components/ProposalPanel.tsx`
+T071 [X] Add `components/ConversationPanel.tsx`, `components/CalendarPanel.tsx`, `components/ProposalPanel.tsx`
 
 - Path: `/Users/axelsoderquist/development/HackHarvardTeam/components/`
 - Action: Minimal renderers to show transcript, events, and proposal diff. These can be implemented in separate files and are parallelizable [P].
 
 ## Integration & Polish
 
-T080 Add unit tests for proposal schema and diff utilities
+T080 [X] Add unit tests for proposal schema and diff utilities
 
 - Path: `/Users/axelsoderquist/development/HackHarvardTeam/tests/unit/test_proposal_schema.test.ts`, `/Users/axelsoderquist/development/HackHarvardTeam/tests/unit/test_diff.test.ts`
 - Action: Ensure `lib/proposal-schema.ts` and `lib/diff.ts` validated; aim for quick test coverage on schema correctness and sleep estimation.
