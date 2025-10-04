@@ -28,7 +28,7 @@ export function useTTS() {
 
   const speak = useCallback(async (text: string, options: TTSOptions = {}) => {
     try {
-      setState(prev => ({ ...prev, isGenerating: true, error: null }));
+      setState((prev) => ({ ...prev, isGenerating: true, error: null }));
 
       // Stop any currently playing audio
       if (audioRef.current) {
@@ -69,11 +69,11 @@ export function useTTS() {
       audioRef.current = audio;
 
       audio.onplay = () => {
-        setState(prev => ({ ...prev, isPlaying: true, isGenerating: false }));
+        setState((prev) => ({ ...prev, isPlaying: true, isGenerating: false }));
       };
 
       audio.onended = () => {
-        setState(prev => ({ ...prev, isPlaying: false }));
+        setState((prev) => ({ ...prev, isPlaying: false }));
         // Clean up
         URL.revokeObjectURL(audioUrl);
         currentAudioUrl.current = null;
@@ -81,18 +81,17 @@ export function useTTS() {
       };
 
       audio.onerror = () => {
-        setState(prev => ({ 
-          ...prev, 
-          isPlaying: false, 
+        setState((prev) => ({
+          ...prev,
+          isPlaying: false,
           isGenerating: false,
-          error: 'Failed to play audio'
+          error: 'Failed to play audio',
         }));
       };
 
       await audio.play();
-
     } catch (error) {
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         isGenerating: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -109,11 +108,11 @@ export function useTTS() {
       URL.revokeObjectURL(currentAudioUrl.current);
       currentAudioUrl.current = null;
     }
-    setState(prev => ({ ...prev, isPlaying: false }));
+    setState((prev) => ({ ...prev, isPlaying: false }));
   }, []);
 
   const clearError = useCallback(() => {
-    setState(prev => ({ ...prev, error: null }));
+    setState((prev) => ({ ...prev, error: null }));
   }, []);
 
   return {
