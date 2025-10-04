@@ -22,6 +22,10 @@ Task generation rules applied:
 - Different-target-file tasks marked [P] (parallelizable); same-file tasks are sequential
 - Tasks ordered by dependencies: Setup → Tests → Models → Services → Endpoints → Integration → Polish
 
+**COMMON AI MISTAKES**
+- NODE_ENV is never 'test', it is 'development' for tests!
+- Make sure tests conform to schemas in lib/
+
 All paths below are absolute and relative to the repository root.
 
 Numbering: T001, T002, ...

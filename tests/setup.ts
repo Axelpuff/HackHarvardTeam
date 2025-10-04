@@ -1,6 +1,9 @@
 // Test setup for all test environments
 import { vi } from 'vitest';
 
+// Set NODE_ENV to test
+(process.env as any).NODE_ENV = 'test';
+
 // Mock NextAuth
 vi.mock('next-auth', () => ({
   default: vi.fn(),

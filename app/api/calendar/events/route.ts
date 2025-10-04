@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
       // }
       // accessToken = session.accessToken as string;
     }
-
+    
     const calendarClient =
       process.env.NODE_ENV === 'test'
         ? (() => {

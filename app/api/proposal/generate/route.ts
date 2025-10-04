@@ -31,15 +31,17 @@ const ErrorResponseSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     // Parse and validate request body
+    console.log('Received request to /api/proposal/generate');
     const body = await request.json();
+    console.log('Request body:', body);
     const requestData = GenerateProposalRequestSchema.parse(body);
-
+    console.log('Received proposal generation request:', requestData);
     // Create Gemini client (use mock in test environment)
     const geminiClient =
       process.env.NODE_ENV === 'test'
         ? new MockGeminiClient()
         : createGeminiClient();
-
+    console.log('Using Gemini client:', geminiClient instanceof MockGeminiClient ? 'MockGeminiClient' : 'RealGeminiClient');
     // Generate proposal using Gemini
     const rawProposal = await geminiClient.generateProposal({
       problemText: requestData.problemText,
@@ -47,7 +49,7 @@ export async function POST(request: NextRequest) {
       events: requestData.events,
       preferences: requestData.preferences,
     });
-
+    console.log('Raw proposal from Gemini:', rawProposal);
     // Validate the proposal structure and quality
     const validatedProposal = validateLLMProposal(rawProposal);
     const qualityCheck = validateProposalQuality(validatedProposal);
