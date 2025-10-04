@@ -4,6 +4,8 @@ import {
   createGoogleCalendarClient,
   MockGoogleCalendarClient,
 } from '@/lib/google-calendar';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 // Query parameter schema
 const CalendarEventsQuerySchema = z.object({
@@ -75,13 +77,16 @@ export async function GET(request: NextRequest) {
     // Create Google Calendar client (use mock in test environment)
     let accessToken = 'mock-token';
     if (process.env.VITEST !== 'true') {
-      // In production, would get access token from session
-      // For now, using mock token
-      // const session = await getServerSession();
-      // if (!session?.accessToken) {
-      //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      // }
-      // accessToken = session.accessToken as string;
+      const session = await getServerSession(authOptions);
+      if (!session?.accessToken) {
+        const response = ErrorResponseSchema.parse({
+          ok: false,
+            code: 'UNAUTHORIZED',
+            message: 'User not authenticated',
+        });
+        return NextResponse.json(response, { status: 401 });
+      }
+      accessToken = session.accessToken as string;
     }
     
     const calendarClient =

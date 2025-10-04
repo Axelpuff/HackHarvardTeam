@@ -1,11 +1,57 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { signIn, signOut, useSession } from 'next-auth/react';
+import { CalendarPanel } from '@/components/CalendarPanel';
+import { type CalendarEvent } from '@/lib/models/calendarEvent';
 
 export default function HomePage() {
   const { data: session, status } = useSession();
   const [isConversationActive, setIsConversationActive] = useState(false);
+  // State for current calendar events
+  const [currentEvents, setCurrentEvents] = useState<CalendarEvent[]>([]);
+  const [isLoadingCurrent, setIsLoadingCurrent] = useState(false);
+  // State for proposed schedule changes (may include diff metadata later)
+  const [proposedEvents, setProposedEvents] = useState<CalendarEvent[]>([]);
+  const [isLoadingProposed, setIsLoadingProposed] = useState(false);
+  // TODO: Wire up fetching of current events when conversation starts or on mount.
+  // TODO: Populate proposedEvents with diff metadata (changeType, accepted) when proposals are generated.
+
+  // Minimal fetch of current events when conversation starts.
+  useEffect(() => {
+    if (!isConversationActive) return; // Only load after conversation begins
+    let cancelled = false;
+    setIsLoadingCurrent(true);
+
+    fetch('/api/calendar/events?scope=day')
+      .then(async (res) => {
+        if (!res.ok) {
+          throw new Error(`Failed to load events (${res.status})`);
+        }
+        const data = await res.json();
+        if (cancelled) return;
+        setCurrentEvents(
+          (data.events || []).map((e: any) => ({
+            ...e,
+            source: 'current' as const,
+            changeType: 'none' as const,
+          }))
+        );
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          console.error('Calendar fetch error:', err);
+          setCurrentEvents([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingCurrent(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isConversationActive]);
 
   if (status === 'loading') {
     return (
@@ -74,20 +120,15 @@ export default function HomePage() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" role="main">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Calendar Panel - Current Events */}
+          {/* Calendar Panel - Current Events (uses shared component) */}
           <section className="lg:col-span-1" aria-labelledby="current-schedule-heading">
-            <div className="bg-white rounded-lg shadow-sm border h-96" data-testid="calendar-current">
-              <div className="p-4 border-b">
-                <h2 id="current-schedule-heading" className="text-lg font-medium text-gray-900">
-                  Current Schedule
-                </h2>
-              </div>
-              <div className="p-4" role="region" aria-label="Current calendar events">
-                <div className="text-center text-gray-500 mt-8">
-                  <p>Your current events will appear here</p>
-                  <p className="text-sm mt-2">Connect and start a conversation to load events</p>
-                </div>
-              </div>
+            <div aria-hidden="true" className="sr-only" id="current-schedule-heading">Current Schedule</div>
+            <div data-testid="calendar-current">
+              <CalendarPanel
+                title="Current Schedule"
+                events={currentEvents}
+                isLoading={isLoadingCurrent}
+              />
             </div>
           </section>
 
@@ -156,20 +197,16 @@ export default function HomePage() {
             </div>
           </section>
 
-          {/* Proposal Panel - Proposed Changes */}
+          {/* Proposal Panel - Proposed Changes (uses shared component) */}
           <section className="lg:col-span-1" aria-labelledby="proposals-heading">
-            <div className="bg-white rounded-lg shadow-sm border h-96" data-testid="calendar-proposed">
-              <div className="p-4 border-b">
-                <h2 id="proposals-heading" className="text-lg font-medium text-gray-900">
-                  Proposed Changes
-                </h2>
-              </div>
-              <div className="p-4" role="region" aria-label="Proposed schedule changes">
-                <div className="text-center text-gray-500 mt-8">
-                  <p>Schedule proposals will appear here</p>
-                  <p className="text-sm mt-2">Start a conversation to generate suggestions</p>
-                </div>
-              </div>
+            <div aria-hidden="true" className="sr-only" id="proposals-heading">Proposed Changes</div>
+            <div data-testid="calendar-proposed">
+              <CalendarPanel
+                title="Proposed Changes"
+                events={proposedEvents}
+                isLoading={isLoadingProposed}
+                showDiff
+              />
             </div>
           </section>
         </div>
