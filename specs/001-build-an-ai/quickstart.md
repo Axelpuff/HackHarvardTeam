@@ -3,12 +3,14 @@
 This quickstart shows the end-to-end demo path for the hackathon MVP.
 
 ## Prerequisites
+
 - Node.js 18+
 - Google Cloud project with OAuth client (web) configured
 - ElevenLabs API key
 - Gemini API key (Google AI Studio)
 
 ## Environment Variables (example .env.local)
+
 ```
 GOOGLE_CLIENT_ID=...apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=... (if required for server exchange; PKCE preferred)
@@ -19,6 +21,7 @@ GOOGLE_CALENDAR_SCOPES=https://www.googleapis.com/auth/calendar.events
 ```
 
 ## Flow Steps
+
 1. Sign in with Google (NextAuth) → consent screen for Calendar events scope.
 2. Landing shows two calendar panels: Current (left) empty placeholder until load, Proposed (right) with onboarding message.
 3. Press "Start Conversation"; allow microphone (if supported) OR type into input.
@@ -32,6 +35,7 @@ GOOGLE_CALENDAR_SCOPES=https://www.googleapis.com/auth/calendar.events
 11. Export transcript (.txt) via Export button.
 
 ## Smoke Test Script (Manual)
+
 - Start dev server: `npm run dev` (placeholder) and open app.
 - Complete steps 1–10 above in under 3 minutes.
 - Verify:
@@ -40,14 +44,19 @@ GOOGLE_CALENDAR_SCOPES=https://www.googleapis.com/auth/calendar.events
   - Rationale visible on hover/click
   - WCAG AA contrast (use browser extension quick check)
   - Undo restores original calendar diff state
+  - After Apply, confirm events actually appear/are updated in the connected Google Calendar (open calendar.google.com in another tab and refresh). Added events have correct title/start/end; moved/adjusted events reflect new times.
+  - Optional: Perform Undo then refresh Google Calendar and confirm the reverted events reflect prior state.
 
 ## Error Simulation
+
 - Revoke Calendar permissions in Google account → attempt Apply → expect error notice and no changes.
 - Disable network (DevTools) during Apply after first event to test retry/backoff display.
 
 ## Cleanup
+
 - Sign out via profile menu.
 - Clear preferences: click "Reset Preferences" in settings panel.
 
 ## Notes
-This is an MVP; data not persisted server-side. Refreshing clears proposals/transcript except preferences.
+
+This is an MVP. No separate database is used; authoritative schedule data persists in Google Calendar via the Apply action (write operations: create/update/delete). Ephemeral conversational artifacts (proposals, transcript) are held in memory and cleared on refresh; user preferences persist locally (localStorage). This enables demonstrating real sync back to Google Calendar without maintaining additional server-side storage.

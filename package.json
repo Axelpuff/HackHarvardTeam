@@ -1,0 +1,46 @@
+{
+  "name": "hack-harvard-team",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "npm run test:unit && npm run test:integration && npm run test:contract",
+    "test:unit": "vitest run --config vitest.config.unit.ts",
+    "test:integration": "vitest run --config vitest.config.integration.ts",
+    "test:contract": "vitest run --config vitest.config.contract.ts",
+    "test:e2e": "playwright test",
+    "test:watch": "vitest --config vitest.config.unit.ts"
+  },
+  "dependencies": {
+    "next": "14.0.3",
+    "react": "^18",
+    "react-dom": "^18",
+    "next-auth": "^4.24.5",
+    "zod": "^3.22.4",
+    "@next-auth/prisma-adapter": "^1.0.7",
+    "tailwindcss": "^3.3.6",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32"
+  },
+  "devDependencies": {
+    "typescript": "^5",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "eslint": "^8",
+    "eslint-config-next": "14.0.3",
+    "@typescript-eslint/parser": "^6.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "prettier": "^3.1.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.1",
+    "vitest": "^1.0.4",
+    "@vitejs/plugin-react": "^4.2.0",
+    "playwright": "^1.40.1",
+    "@playwright/test": "^1.40.1",
+    "jsdom": "^23.0.1"
+  }
+}

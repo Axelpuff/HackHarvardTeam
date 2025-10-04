@@ -1,209 +1,183 @@
-# 11Labs Speech-to-Text API Integration
+# AI Schedule Counseling Assistant
 
-This project provides a comprehensive integration with the 11Labs Speech-to-Text API using their latest **Scribe v1** model, offering easy-to-use Python classes for converting audio files to text.
+A conversational AI assistant that helps optimize your calendar schedule through natural dialogue. The system ingests your Google Calendar events, gathers clarifications about scheduling concerns, and proposes non-destructive schedule changes that you can selectively accept.
 
 ## Features
 
-- **Latest 11Labs Scribe v1**: State-of-the-art speech recognition model
-- **99 Languages Supported**: Accurate transcription in 99 languages
-- **Word-level Timestamps**: Precise word-level timestamps for each transcription
-- **Speaker Diarization**: Automatic speaker identification and separation
-- **Dynamic Audio Tagging**: Automatic detection of audio content types
-- **Easy Integration**: Simple Python classes for speech-to-text operations
-- **Batch Processing**: Transcribe multiple audio files at once
-- **Error Handling**: Robust error handling and logging
-- **Configurable**: Flexible configuration options
-- **Multiple Formats**: Support for various audio formats (MP3, WAV, M4A, etc.)
+- **Voice-driven conversation**: Natural language interaction with TTS support
+- **Smart schedule analysis**: AI-powered calendar optimization using Gemini API
+- **Selective acceptance**: Choose which proposed changes to apply
+- **Safe calendar sync**: Atomic per-event synchronization with Google Calendar
+- **Undo functionality**: Single-level undo for applied changes
+- **Sleep assessment**: Evaluates schedule impact on sleep patterns
+- **Real-time diff visualization**: Side-by-side calendar view showing current vs proposed changes
 
-## Setup
+## Quick Start
 
-### 1. Install Dependencies
+### Prerequisites
 
-**Option A: Minimal Installation (Recommended for Windows)**
-```bash
-python minimal_setup.py
+- Node.js 18+
+- Google Cloud project with OAuth client (web) configured
+- ElevenLabs API key
+- Gemini API key (Google AI Studio)
+
+### Environment Setup
+
+Create a `.env.local` file in the project root:
+
+```env
+GOOGLE_CLIENT_ID=...apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=... 
+NEXTAUTH_SECRET=dev-secret-change-in-production
+ELEVENLABS_API_KEY=sk_...
+GEMINI_API_KEY=...
+GOOGLE_CALENDAR_SCOPES=https://www.googleapis.com/auth/calendar.events
 ```
 
-**Option B: Full Installation (if you have Windows Long Path support enabled)**
-```bash
-python install_simple.py
-```
-
-**Option C: Manual Installation**
-```bash
-pip install -r requirements.txt
-```
-
-**Note**: The minimal setup avoids Windows Long Path issues and provides a working solution. The full setup includes more features but may require Windows Long Path support to be enabled.
-
-### 2. Configure API Key
-
-The setup script will create a `.env` file automatically. Edit it and add your API key:
+### Installation & Development
 
 ```bash
-ELEVENLABS_API_KEY=your_actual_api_key_here
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Open http://localhost:3000
 ```
 
-Get your API key from [11Labs](https://elevenlabs.io/).
+### Demo Flow
 
-### 3. Verify Installation
+1. **Sign in** with Google → consent to Calendar events access
+2. **Start conversation** → "My Tuesdays are too hectic"
+3. **Answer clarifying questions** → "I want more focus time and earlier dinner"
+4. **Review proposal** → see highlighted changes with rationale
+5. **Apply selectively** → choose which changes to sync to Google Calendar
+6. **Verify in Google Calendar** → changes appear in your actual calendar
+7. **Undo if needed** → revert last applied changes
 
-**For Minimal Setup:**
+## Testing
+
+Run the complete test suite:
+
 ```bash
-python simple_client.py
+# All tests
+npm test
+
+# Individual test suites
+npm run test:unit        # Model validation, utilities
+npm run test:contract    # API endpoint contracts
+npm run test:integration # End-to-end workflows
+npm run test:e2e         # Playwright browser tests
 ```
 
-**For Full Setup:**
+### Test Coverage
+
+- **Contract tests**: Validate all API endpoints match OpenAPI specifications
+- **Integration tests**: Conversation flow and calendar sync workflows
+- **Unit tests**: Schema validation, diff utilities, sleep assessment
+- **E2E tests**: Full browser automation of quickstart scenarios
+
+## Architecture
+
+### Tech Stack
+
+- **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS
+- **Backend**: Next.js API Routes, NextAuth.js (Google OAuth)
+- **AI**: Gemini API for conversation and proposal generation
+- **TTS**: ElevenLabs for voice responses
+- **Calendar**: Google Calendar API with atomic sync operations
+- **Validation**: Zod schemas for type safety
+- **Testing**: Vitest (unit/integration), Playwright (E2E)
+
+### Project Structure
+
+```
+app/
+  api/                    # API routes matching OpenAPI contracts
+    conversation/clarify/ # Generate clarifying questions
+    proposal/generate/    # Create schedule proposals
+    proposal/apply/       # Sync changes to Google Calendar
+    proposal/undo/        # Revert last application
+    calendar/events/      # Fetch calendar events
+    tts/speak/           # Text-to-speech conversion
+  page.tsx               # Main application UI
+
+lib/
+  models/               # TypeScript interfaces + Zod schemas
+  gemini.ts            # AI prompt and response handling
+  google-calendar.ts   # Calendar API client with retry logic
+  elevenlabs-tts.ts    # Text-to-speech service
+  proposal-schema.ts   # Validation for AI-generated proposals
+  diff.ts              # Calendar change utilities
+
+components/
+  CalendarPanel.tsx    # Current vs proposed event displays
+  ConversationPanel.tsx # Chat interface with transcript
+  ProposalPanel.tsx    # Change review and selection UI
+
+tests/
+  contract/            # API endpoint validation
+  integration/         # Workflow testing
+  unit/               # Model and utility testing
+  e2e/                # Browser automation
+```
+
+## Performance Goals
+
+- **First clarifying question**: < 2 seconds
+- **Complete proposal generation**: < 60 seconds from session start
+- **TTS playback start**: < 1.5 seconds after text ready
+- **Calendar sync**: Atomic operations with exponential backoff (2s/4s/8s)
+
+## Data Storage
+
+- **Authoritative data**: Google Calendar (no separate database)
+- **Session state**: In-memory (proposals, transcript)
+- **User preferences**: localStorage (sleep targets, priorities)
+- **Authentication**: NextAuth.js sessions
+
+## API Documentation
+
+The system exposes REST endpoints documented in OpenAPI format:
+
+- `POST /api/conversation/clarify` - Generate clarifying questions
+- `POST /api/proposal/generate` - Create schedule proposals
+- `POST /api/proposal/apply` - Apply changes to calendar
+- `POST /api/proposal/undo` - Revert last application
+- `GET /api/calendar/events` - Fetch calendar events
+- `POST /api/tts/speak` - Convert text to speech
+
+See `specs/001-build-an-ai/contracts/openapi.yaml` for complete specifications.
+
+## Development Commands
+
 ```bash
-python example_usage.py
+npm run dev          # Start development server
+npm run build        # Production build
+npm run start        # Start production server
+npm run lint         # ESLint checking
+npm run test:watch   # Watch mode for unit tests
 ```
 
-## Usage
+## Accessibility
 
-### Basic Usage
+- WCAG AA color contrast compliance
+- Keyboard navigation support
+- Screen reader compatibility
+- High contrast mode support
 
-**Minimal Setup (Recommended):**
-```python
-from simple_client import SimpleElevenLabsClient
+## Limitations (MVP Scope)
 
-# Initialize the client
-client = SimpleElevenLabsClient()
+- Single user sessions (no multi-user support)
+- Single undo level (no full history)
+- Small calendar scope (< 200 events optimized)
+- Desktop Chrome optimized (mobile responsive but not primary target)
 
-# Transcribe a single audio file
-result = client.speech_to_text("path/to/your/audio.mp3")
+## Contributing
 
-if result["success"]:
-    print(f"Transcribed text: {result['text']}")
-    print(f"Language: {result['language']}")
-    print(f"Timestamps: {result['timestamps']}")
-    print(f"Speakers: {result['speakers']}")
-else:
-    print(f"Error: {result['error']}")
-```
-
-**Full Setup:**
-```python
-from speech_to_text_service import SpeechToTextService
-
-# Initialize the service
-stt_service = SpeechToTextService()
-
-# Transcribe a single audio file
-result = stt_service.transcribe_audio("path/to/your/audio.mp3")
-
-if result["success"]:
-    print(f"Transcribed text: {result['text']}")
-else:
-    print(f"Error: {result['error']}")
-```
-
-### Batch Processing
-
-```python
-# Transcribe multiple files
-audio_files = ["audio1.mp3", "audio2.wav", "audio3.m4a"]
-results = stt_service.transcribe_multiple_files(audio_files)
-
-print(f"Processed {results['total_files']} files")
-print(f"Successful: {results['successful_transcriptions']}")
-print(f"Failed: {results['failed_transcriptions']}")
-```
-
-### Advanced Usage
-
-```python
-# Use specific model
-result = stt_service.transcribe_audio("audio.mp3", model="whisper-1")
-
-# Get service information
-info = stt_service.get_service_info()
-print(f"Available models: {info['models']}")
-print(f"Usage info: {info['usage']}")
-```
-
-## API Reference
-
-### SpeechToTextService
-
-Main service class for speech-to-text operations.
-
-#### Methods
-
-- `transcribe_audio(audio_file_path, model=None)`: Transcribe a single audio file
-- `transcribe_multiple_files(audio_files, model=None)`: Transcribe multiple audio files
-- `get_service_info()`: Get service and model information
-
-### ElevenLabsClient
-
-Low-level client for 11Labs API interactions.
-
-#### Methods
-
-- `speech_to_text(audio_file_path, model)`: Direct API call for speech-to-text
-- `get_available_models()`: Get list of available models
-- `get_usage_info()`: Get API usage statistics
-
-## Configuration
-
-The `config.py` file contains all configuration options:
-
-```python
-class Config:
-    ELEVENLABS_API_KEY = "your_api_key"
-    ELEVENLABS_BASE_URL = "https://api.elevenlabs.io/v1"
-    AUDIO_FORMAT = "mp3"
-    AUDIO_QUALITY = "high"
-    STT_MODEL = "whisper-1"
-```
-
-## Supported Audio Formats
-
-- MP3
-- WAV
-- M4A
-- FLAC
-- OGG
-- And more (check 11Labs documentation)
-
-## Error Handling
-
-The service includes comprehensive error handling:
-
-- File not found errors
-- API authentication errors
-- Network connectivity issues
-- Invalid audio format errors
-
-All methods return dictionaries with `success` boolean and appropriate error messages.
-
-## Logging
-
-The service includes built-in logging. To enable debug logging:
-
-```python
-import logging
-logging.basicConfig(level=logging.DEBUG)
-```
-
-## Examples
-
-See `example_usage.py` for complete working examples.
-
-## Requirements
-
-- Python 3.7+
-- 11Labs API key
-- Internet connection for API calls
-
-## Dependencies
-
-- `elevenlabs`: Official 11Labs Python SDK
-- `requests`: HTTP library for API calls
-- `python-dotenv`: Environment variable management
-- `pydub`: Audio processing
-- `soundfile`: Audio file I/O
-- `numpy`: Numerical operations
+This is a hackathon MVP project. The implementation follows test-driven development with comprehensive coverage of the core scheduling workflow.
 
 ## License
 
-This project is open source. Please check 11Labs terms of service for API usage.
+Open source project. Please check Google Calendar API and ElevenLabs terms of service for usage restrictions.

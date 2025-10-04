@@ -3,17 +3,21 @@
 ## 🚀 Quick Setup (5 minutes)
 
 ### Step 1: Install Dependencies
+
 ```bash
 python minimal_setup.py
 ```
 
 ### Step 2: Add Your API Key
+
 Edit the `.env` file and replace `your_api_key_here` with your actual 11Labs API key:
+
 ```
 ELEVENLABS_API_KEY=your_actual_api_key_here
 ```
 
 ### Step 3: Test the Installation
+
 ```bash
 python simple_client.py
 ```
@@ -63,15 +67,19 @@ HackHarvardTeam/
 ## 🔧 Troubleshooting
 
 ### Windows Long Path Issues
+
 If you encounter path length errors, use the minimal setup:
+
 ```bash
 python minimal_setup.py
 ```
 
 ### Missing Dependencies
+
 If some packages fail to install, the minimal setup will still work with just `requests` and `python-dotenv`.
 
 ### API Key Issues
+
 Make sure your API key is correctly set in the `.env` file and that you have an active 11Labs account.
 
 ## 📚 Next Steps
