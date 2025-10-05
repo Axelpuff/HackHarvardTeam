@@ -65,10 +65,18 @@ export class GeminiClient {
    */
   async generateClarifyingQuestion(
     problemText: string,
-    answeredQuestions: string[] = []
+    answeredQuestions: string[] = [],
+    currentEvents: CalendarEvent[] = []
   ): Promise<string> {
     const prompt = `
 You are an AI scheduling assistant. A user has described a scheduling problem: "${problemText}"
+
+${
+  currentEvents.length > 0
+    ? `Current schedule:
+${currentEvents.map((e) => `- "${e.title}" from ${e.start} to ${e.end} (${e.durationMinutes} min)`).join('\n')}`
+    : ''
+}
 
 ${
   answeredQuestions.length > 0
@@ -83,6 +91,7 @@ Focus on practical details like:
 - Priority activities
 - Constraints or commitments
 - Goals (focus time, exercise, sleep, etc.)
+- Conflicts with existing events
 
 Return only the question, no additional text.
 `;
@@ -220,10 +229,14 @@ export class MockGeminiClient extends GeminiClient {
 
   async generateClarifyingQuestion(
     problemText: string,
-    answeredQuestions: string[] = []
+    answeredQuestions: string[] = [],
+    currentEvents: CalendarEvent[] = []
   ): Promise<string> {
     // Return mock clarifying questions based on input
     if (answeredQuestions.length === 0) {
+      if (currentEvents.length > 0) {
+        return 'I can see you have several events scheduled. What specific time slots feel most problematic for your goals?';
+      }
       return 'What specific aspects of your schedule feel most problematic?';
     }
     return 'What time of day do you prefer for focused work?';
