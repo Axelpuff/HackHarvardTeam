@@ -23,7 +23,8 @@
     "@next-auth/prisma-adapter": "^1.0.7",
     "tailwindcss": "^3.3.6",
     "autoprefixer": "^10.4.16",
-    "postcss": "^8.4.32"
+    "postcss": "^8.4.32",
+    "@google/genai": "^1.22.0"
   },
   "devDependencies": {
     "typescript": "^5",
