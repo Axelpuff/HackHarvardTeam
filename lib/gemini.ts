@@ -169,6 +169,9 @@ Rules:
 - Each change needs a clear rationale
 - Sleep assessment should estimate based on last evening event to first morning event
 - Focus on addressing the user's stated problem
+- IMPORTANT: Only include changes for events that need to be modified, added, or removed
+- DO NOT include changes for existing events that should remain unchanged
+- The proposed schedule will start as a copy of the current schedule, with only your specified changes applied
 
 Return only valid JSON, no additional text.
 `;

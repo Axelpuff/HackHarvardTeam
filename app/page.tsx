@@ -125,25 +125,71 @@ export default function HomePage() {
           speakText(proposalMsg);
 
           if (data.proposal?.changes && Array.isArray(data.proposal.changes)) {
-            const mapped = data.proposal.changes
-              .filter((c: any) => c.event)
-              .map((c: any) => ({
-                id: c.event.id || c.id,
-                title: c.event.title,
-                start: c.event.start,
-                end: c.event.end,
-                durationMinutes:
-                  c.event.durationMinutes ||
-                  Math.round(
-                    (new Date(c.event.end).getTime() -
-                      new Date(c.event.start).getTime()) /
-                      60000
-                  ),
-                source: 'proposed' as const,
-                changeType: c.type,
-                originalEventId: c.targetEventId,
-              }));
-            setProposedEvents(mapped);
+            // Start with current events as the base for proposed schedule
+            let proposedSchedule = [...currentEvents];
+            
+            // Apply each change to build the complete proposed schedule
+            for (const change of data.proposal.changes) {
+              if (!change.event) continue;
+              
+              switch (change.type) {
+                case 'add':
+                  // Add new event
+                  proposedSchedule.push({
+                    id: change.event.id || change.id,
+                    title: change.event.title,
+                    start: change.event.start,
+                    end: change.event.end,
+                    durationMinutes:
+                      change.event.durationMinutes ||
+                      Math.round(
+                        (new Date(change.event.end).getTime() -
+                          new Date(change.event.start).getTime()) /
+                          60000
+                      ),
+                    source: 'proposed' as const,
+                    changeType: 'add',
+                  });
+                  break;
+                  
+                case 'remove':
+                  // Remove existing event
+                  if (change.targetEventId) {
+                    proposedSchedule = proposedSchedule.filter(
+                      event => event.id !== change.targetEventId
+                    );
+                  }
+                  break;
+                  
+                case 'move':
+                case 'adjust':
+                  // Modify existing event
+                  if (change.targetEventId) {
+                    const eventIndex = proposedSchedule.findIndex(
+                      event => event.id === change.targetEventId
+                    );
+                    if (eventIndex !== -1) {
+                      proposedSchedule[eventIndex] = {
+                        ...proposedSchedule[eventIndex],
+                        title: change.event.title,
+                        start: change.event.start,
+                        end: change.event.end,
+                        durationMinutes:
+                          change.event.durationMinutes ||
+                          Math.round(
+                            (new Date(change.event.end).getTime() -
+                              new Date(change.event.start).getTime()) /
+                              60000
+                          ),
+                        changeType: change.type,
+                      };
+                    }
+                  }
+                  break;
+              }
+            }
+            
+            setProposedEvents(proposedSchedule);
           }
         }
       } catch (err: any) {
