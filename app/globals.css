@@ -5,12 +5,32 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  /* Glass panel variables */
+  --panel-glass-bg: rgba(255,255,255,0.55);
+  --panel-glass-border: rgba(0,0,0,0.08);
+  --panel-glass-inner: rgba(255,255,255,0.25);
+  --panel-glass-shadow: 0 4px 24px -6px rgba(0,0,0,0.18), 0 2px 8px -2px rgba(0,0,0,0.06);
+  --panel-glass-backdrop: saturate(160%) blur(18px);
+  --event-card-bg: rgba(255,255,255,0.7);
+  --event-card-hover: rgba(255,255,255,0.9);
+  --event-card-border: rgba(0,0,0,0.08);
+  --conversation-panel-bg: #ffffff;
+  --conversation-transcript-bg: #f9fafb; /* near gray-50 */
+  --conversation-input-bg: #ffffff;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    --panel-glass-bg: rgba(20,20,22,0.55);
+    --panel-glass-border: rgba(255,255,255,0.10);
+    --panel-glass-inner: rgba(255,255,255,0.12);
+    --panel-glass-shadow: 0 4px 24px -6px rgba(0,0,0,0.6), 0 2px 8px -2px rgba(0,0,0,0.4);
+    --panel-glass-backdrop: saturate(140%) blur(20px);
+    --event-card-bg: rgba(40,40,46,0.55);
+    --event-card-hover: rgba(40,40,46,0.75);
+    --event-card-border: rgba(255,255,255,0.08);
   }
 }
 
@@ -20,9 +40,164 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* === Calendar Style Overrides (Glass + Subtle Grid) === */
+/* Color variables for grid lines */
+:root {
+  --fc-grid-line-light: rgba(0,0,0,0.07);
+    --conversation-panel-bg: #0f1012; /* slightly different from pure gray-900 */
+    --conversation-transcript-bg: rgba(31,32,35,0.7);
+    --conversation-input-bg: rgba(18,19,21,0.9);
+  --fc-grid-line-strong-light: rgba(0,0,0,0.12);
+  --fc-grid-line-dark: rgba(255,255,255,0.10);
+  --fc-grid-line-strong-dark: rgba(255,255,255,0.18);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fc-grid-line-light: var(--fc-grid-line-dark);
+    --fc-grid-line-strong-light: var(--fc-grid-line-strong-dark);
+  }
+}
+
+/* Reset outer frame, keep it clean */
+.fc-theme-standard .fc-scrollgrid {
+  border: none !important;
+}
+
+/* Do not blanket-remove all cell borders; let plugin provide structure */
+
+/* Time slot horizontal lines */
+.fc .fc-timegrid-slot {
+  border-bottom: 1px solid var(--fc-grid-line-light) !important;
+}
+
+/* Stronger hour separators */
+.fc .fc-timegrid-slot[data-time$=':00:00'] {
+  border-bottom: 1px solid var(--fc-grid-line-strong-light) !important;
+}
+
+/* Remove line just before headers */
+.fc-col-header-cell,
+.fc-timegrid-axis {
+  border: none !important;
+}
+
+/* Header underline using shadow for better blending */
+.fc .fc-col-header-cell {
+  box-shadow: inset 0 -1px 0 0 var(--fc-grid-line-strong-light);
+}
+
+/* Vertical day column dividers */
+.fc .fc-timegrid-col-frame {
+  border-left: 1px solid var(--fc-grid-line-light) !important;
+}
+.fc .fc-timegrid-col:first-child .fc-timegrid-col-frame {
+  border-left: none !important;
+}
+
+/* Axis separator a bit stronger */
+.fc .fc-timegrid-axis-frame {
+  border-right: 1px solid var(--fc-grid-line-strong-light) !important;
+}
+
+/* Remove event borders and add subtle translucency */
+.fc .fc-event {
+  border: none !important;
+  background-color: rgba(59,130,246,0.75) !important; /* tailwind blue-500 w/ opacity */
+  backdrop-filter: saturate(140%) blur(4px);
+}
+
+/* Current time indicator more subtle */
+.fc .fc-now-indicator-line {
+  border-top: 2px solid rgba(99,102,241,0.8) !important; /* indigo-500 */
+}
+.fc .fc-now-indicator-arrow {
+  display: none;
+}
+
+/* Hide column separators */
+.fc .fc-col-header-cell,
+.fc .fc-timegrid-slot,
+.fc .fc-timegrid-axis {
+  border: none !important;
+}
+
+/* Light translucent background for calendar area to differentiate subtly */
+.fc .fc-timegrid-body,
+.fc .fc-timegrid-bg-table {
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+}
+
+@media (prefers-color-scheme: dark) {
+  .fc .fc-timegrid-body,
+  .fc .fc-timegrid-bg-table {
+    background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+  }
+}
+
+/* Current day highlight: neutral white instead of yellow */
+.fc-theme-standard .fc-day-today,
+.fc-theme-standard .fc-day-today .fc-timegrid-col-frame,
+.fc-theme-standard .fc-timegrid-allday .fc-day-today {
+  background: rgba(255,255,255,0.1) !important;
+}
+
+/* Dark mode: a subtle translucent layer instead of bright color */
+.dark .fc-theme-standard .fc-day-today,
+.dark .fc-theme-standard .fc-day-today .fc-timegrid-col-frame,
+.dark .fc-theme-standard .fc-timegrid-allday .fc-day-today {
+  background: rgba(255,255,255,0.07) !important;
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  /* Reusable glass panel */
+  .panel-glass {
+    position: relative;
+    background: var(--panel-glass-bg);
+    border: 1px solid var(--panel-glass-border);
+    border-radius: 1rem; /* matches rounded-2xl */
+    box-shadow: var(--panel-glass-shadow);
+    backdrop-filter: var(--panel-glass-backdrop);
+    -webkit-backdrop-filter: var(--panel-glass-backdrop);
+  }
+
+  .panel-glass:before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(145deg, var(--panel-glass-inner), transparent 60%);
+    pointer-events: none;
+  }
+
+  /* Conversation panel utility */
+  .conversation-panel {
+    background: var(--conversation-panel-bg);
+    transition: background .35s ease, color .35s ease;
+  }
+  .conversation-transcript-bg {
+    background: var(--conversation-transcript-bg);
+    transition: background .35s ease;
+  }
+  .conversation-input-bg {
+    background: var(--conversation-input-bg);
+    transition: background .35s ease;
+  }
+
+  .event-card {
+    background: var(--event-card-bg);
+    border: 1px solid var(--event-card-border);
+    backdrop-filter: saturate(160%) blur(8px);
+    -webkit-backdrop-filter: saturate(160%) blur(8px);
+    transition: background .25s ease, border-color .25s ease;
+  }
+  .event-card:hover {
+    background: var(--event-card-hover);
+    border-color: var(--panel-glass-border);
   }
   
   /* Animated blob delays */

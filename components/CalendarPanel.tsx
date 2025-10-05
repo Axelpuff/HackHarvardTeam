@@ -63,8 +63,8 @@ export function CalendarPanel({
 
   if (isLoading) {
     return (
-      <div className="bg-white/80 dark:bg-gray-900/70 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 h-96">
-        <div className="p-4 border-b border-transparent bg-gradient-to-r from-white/0 to-white/0 dark:from-gray-900/0 dark:to-gray-900/0 rounded-t-2xl">
+      <div className="panel-glass rounded-2xl h-96">
+        <div className="p-4 rounded-t-2xl">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
             {title}
           </h2>
@@ -81,8 +81,8 @@ export function CalendarPanel({
   }
 
   return (
-    <div className="bg-white/80 dark:bg-gray-900/70 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 h-96">
-      <div className="p-4 border-b flex items-center justify-between">
+    <div className="panel-glass rounded-2xl h-96">
+      <div className="p-4 flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
             {title}
@@ -130,13 +130,18 @@ export function CalendarPanel({
               return (
                 <div
                   key={event.id}
-                  className={`p-3 rounded-lg border flex items-start justify-between bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 shadow-sm`}
+                  className="event-card p-3 rounded-lg flex items-stretch justify-between"
                 >
+                  {/* Accent gradient strip */}
+                  <span
+                    aria-hidden="true"
+                    className="w-1.5 rounded-full bg-gradient-brand mr-3"
+                  ></span>
                   <div className="flex-1">
                     <div className="flex items-center space-x-3">
                       <div className="flex-shrink-0">
                         <div
-                          className={`w-9 h-9 rounded-md flex items-center justify-center ${isDiff ? 'bg-white/30' : 'bg-gray-50 dark:bg-gray-800'}`}
+                          className={`w-9 h-9 rounded-md flex items-center justify-center ${isDiff ? 'bg-white/30' : 'bg-gray-50/70 dark:bg-gray-800/60 backdrop-blur-sm border border-transparent'}`}
                         >
                           {isDiff ? (
                             <span className="text-sm">
@@ -174,7 +179,7 @@ export function CalendarPanel({
                       </div>
                     </div>
                   </div>
-                  <div className="ml-4 flex flex-col items-end">
+                  <div className="ml-3 flex flex-col items-end">
                     {showDiff && changeType && (
                       <span
                         className={`px-2 py-1 rounded-full text-xs font-semibold ${getChangeTypeColor(changeType)}`}

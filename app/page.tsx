@@ -146,11 +146,11 @@ export default function HomePage() {
           if (data.proposal?.changes && Array.isArray(data.proposal.changes)) {
             // Start with current events as the base for proposed schedule
             let proposedSchedule = [...currentEvents];
-            
+
             // Apply each change to build the complete proposed schedule
             for (const change of data.proposal.changes) {
               if (!change.event) continue;
-              
+
               switch (change.type) {
                 case 'add':
                   // Add new event
@@ -170,7 +170,7 @@ export default function HomePage() {
                     changeType: 'add',
                   });
                   break;
-                  
+
                 case 'remove':
                   // Remove existing event
                   if (change.targetEventId) {
@@ -179,7 +179,7 @@ export default function HomePage() {
                     );
                   }
                   break;
-                  
+
                 case 'move':
                 case 'adjust':
                   // Modify existing event
@@ -207,7 +207,7 @@ export default function HomePage() {
                   break;
               }
             }
-            
+
             setProposedEvents(proposedSchedule);
           }
         }
@@ -427,10 +427,10 @@ export default function HomePage() {
         className={`backdrop-blur-lg shadow-xl border-b relative z-20 ${isDarkMode ? 'bg-gray-900/80 border-brand-teal/20' : 'bg-white/80 border-gray-200'}`}
         role="banner"
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-center items-center h-20 relative">
+        <div className="mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-start items-center h-20 relative">
             <img
-              src="/clarity-logo.png"
+              src="/clarity-logo-2.png"
               alt="Clarity"
               className="h-16 w-auto drop-shadow-[0_0_15px_rgba(111,222,182,0.2)]"
             />
@@ -440,7 +440,7 @@ export default function HomePage() {
               aria-label="User navigation"
             >
               <div className="flex items-center space-x-2 mr-4">
-                <label className="text-sm text-gray-400 mr-2">Week</label>
+                {/* <label className="text-sm text-gray-400 mr-2">Week</label> */}
                 <button
                   onClick={() =>
                     setViewMode(viewMode === 'week' ? 'day' : 'week')
@@ -537,10 +537,10 @@ export default function HomePage() {
             aria-labelledby="conversation-heading"
           >
             <div
-              className={`bg-white dark:bg-gray-900 rounded-lg shadow-sm border h-96 flex flex-col lg:rounded-none lg:shadow-none lg:fixed lg:top-20 lg:right-0 lg:w-1/3 lg:h-[calc(100vh-5rem)] lg:border-l lg:border-t-0 lg:border-r-0 lg:border-b-0`}
+              className={`bg-white dark:bg-gray-900 rounded-lg shadow-sm h-96 flex flex-col lg:rounded-none lg:shadow-none lg:fixed lg:top-20 lg:right-0 lg:w-1/3 lg:h-[calc(100vh-5rem)] lg:border-l lg:border-t-0 lg:border-r-0 lg:border-b-0`}
               data-testid="conversation-panel"
             >
-              <div className="p-4 border-b bg-gradient-to-r from-white/0 to-white/0 dark:from-gray-900/0 dark:to-gray-900/0">
+              <div className="p-4 bg-gradient-to-r from-white/0 to-white/0 dark:from-gray-900/0 dark:to-gray-900/0">
                 <h2
                   id="conversation-heading"
                   className="text-lg font-semibold text-gray-900 dark:text-gray-100"
@@ -566,7 +566,7 @@ export default function HomePage() {
                             setIsConversationActive(true);
                             setConversationMode('text');
                           }}
-                          className="bg-gradient-brand text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                          className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
                           aria-label="Start a text chat with the AI schedule assistant"
                         >
                           Start Text Chat
@@ -576,7 +576,7 @@ export default function HomePage() {
                             setIsConversationActive(true);
                             setConversationMode('audio');
                           }}
-                          className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
+                          className="bg-gradient-brand text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
                           aria-label="Start an audio conversation with the AI schedule assistant"
                         >
                           Start Audio Conversation

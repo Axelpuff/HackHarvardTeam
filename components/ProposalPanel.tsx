@@ -73,20 +73,27 @@ export function ProposalPanel({
     return belowTarget ? 'text-red-600 bg-red-50' : 'text-green-600 bg-green-50';
   };
 
-  const acceptedCount = proposal?.changes.filter(c => c.accepted === 'accepted').length || 0;
-  const rejectedCount = proposal?.changes.filter(c => c.accepted === 'rejected').length || 0;
-  const pendingCount = proposal?.changes.filter(c => c.accepted === 'pending').length || 0;
+  const acceptedCount =
+    proposal?.changes.filter((c) => c.accepted === 'accepted').length || 0;
+  const rejectedCount =
+    proposal?.changes.filter((c) => c.accepted === 'rejected').length || 0;
+  const pendingCount =
+    proposal?.changes.filter((c) => c.accepted === 'pending').length || 0;
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg shadow-sm border h-96">
-        <div className="p-4 border-b">
-          <h2 className="text-lg font-medium text-gray-900">Proposed Changes</h2>
+      <div className="rounded-lg shadow-sm h-96 backdrop-blur-md bg-white/5 dark:bg-white/5">
+        <div className="p-4">
+          <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+            Proposed Changes
+          </h2>
         </div>
         <div className="p-4 flex items-center justify-center h-80">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-            <p className="text-gray-500">Generating proposal...</p>
+            <p className="text-gray-500 dark:text-gray-400">
+              Generating proposal...
+            </p>
           </div>
         </div>
       </div>
@@ -94,19 +101,21 @@ export function ProposalPanel({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border h-96">
-      <div className="p-4 border-b">
+    <div className="rounded-lg shadow-sm h-96 backdrop-blur-md bg-white/5 dark:bg-white/5">
+      <div className="p-4">
         <div className="flex justify-between items-start">
           <div>
-            <h2 className="text-lg font-medium text-gray-900">Proposed Changes</h2>
+            <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+              Proposed Changes
+            </h2>
             {proposal && (
-              <div className="mt-1 text-sm text-gray-500">
+              <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 Revision {proposal.revision} • {proposal.changes.length} changes
               </div>
             )}
           </div>
           {proposal && (
-            <div className="text-right text-xs text-gray-500">
+            <div className="text-right text-xs text-gray-500 dark:text-gray-400">
               <div>✅ {acceptedCount} accepted</div>
               <div>❌ {rejectedCount} rejected</div>
               <div>⏳ {pendingCount} pending</div>
@@ -117,7 +126,7 @@ export function ProposalPanel({
 
       <div className="overflow-y-auto h-64">
         {!proposal ? (
-          <div className="p-4 text-center text-gray-500 mt-8">
+          <div className="p-4 text-center text-gray-500 dark:text-gray-400 mt-8">
             <p>No proposal yet</p>
             <p className="text-sm mt-2">
               Start a conversation to generate scheduling suggestions
@@ -127,22 +136,31 @@ export function ProposalPanel({
           <div className="p-4 space-y-4">
             {/* Summary */}
             <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
-              <h3 className="font-medium text-blue-900 text-sm mb-1">Summary</h3>
+              <h3 className="font-medium text-blue-900 text-sm mb-1">
+                Summary
+              </h3>
               <p className="text-sm text-blue-800">{proposal.summary}</p>
             </div>
 
             {/* Sleep Assessment */}
-            <div className={`border rounded-md p-3 ${getSleepAssessmentColor(proposal.sleepAssessment.belowTarget)}`}>
+            <div
+              className={`border rounded-md p-3 ${getSleepAssessmentColor(
+                proposal.sleepAssessment.belowTarget
+              )}`}
+            >
               <h3 className="font-medium text-sm mb-1">Sleep Assessment</h3>
               <p className="text-sm">
-                Estimated: {proposal.sleepAssessment.estimatedSleepHours.toFixed(1)} hours
+                Estimated:{' '}
+                {proposal.sleepAssessment.estimatedSleepHours.toFixed(1)} hours
                 {proposal.sleepAssessment.belowTarget && ' ⚠️ Below target'}
               </p>
             </div>
 
             {/* Changes */}
             <div className="space-y-3">
-              <h3 className="font-medium text-gray-900 text-sm">Changes</h3>
+              <h3 className="font-medium text-gray-900 dark:text-gray-100 text-sm">
+                Changes
+              </h3>
               {proposal.changes.map((change) => (
                 <div
                   key={change.id}
@@ -152,7 +170,9 @@ export function ProposalPanel({
                 >
                   <div className="flex justify-between items-start mb-2">
                     <div className="flex items-center space-x-2">
-                      <span className="text-sm">{getChangeTypeIcon(change.type)}</span>
+                      <span className="text-sm">
+                        {getChangeTypeIcon(change.type)}
+                      </span>
                       <span className="font-medium text-sm">
                         {change.type.toUpperCase()}: {change.event.title}
                       </span>
@@ -185,12 +205,15 @@ export function ProposalPanel({
                     </div>
                   </div>
                   
-                  <div className="text-xs text-gray-600 mb-2">
-                    {formatTime(change.event.start)} - {formatTime(change.event.end)} 
-                    ({formatDuration(change.event.durationMinutes)})
+                  <div className="text-xs text-gray-600 dark:text-gray-300 mb-2">
+                    {formatTime(change.event.start)} -{' '}
+                    {formatTime(change.event.end)} (
+                    {formatDuration(change.event.durationMinutes)})
                   </div>
-                  
-                  <p className="text-xs text-gray-700">{change.rationale}</p>
+
+                  <p className="text-xs text-gray-700 dark:text-gray-200">
+                    {change.rationale}
+                  </p>
                 </div>
               ))}
             </div>
@@ -200,7 +223,7 @@ export function ProposalPanel({
 
       {/* Action Buttons */}
       {proposal && (
-        <div className="p-4 border-t bg-gray-50 flex justify-between">
+        <div className="p-4 bg-gray-50/60 dark:bg-gray-800/40 flex justify-between rounded-b-lg backdrop-blur-sm">
           <button
             onClick={onUndoProposal}
             disabled={!canUndo}

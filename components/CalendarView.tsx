@@ -51,7 +51,7 @@ export default function CalendarView({
   }));
 
   return (
-    <div className="w-full rounded-2xl shadow-inner bg-white/80 dark:bg-gray-900/70 h-full">
+    <div className="panel-glass w-full rounded-2xl h-full">
       <FullCalendar
         key={view}
         ref={ref}
@@ -68,6 +68,32 @@ export default function CalendarView({
         slotMinTime="06:00:00"
         slotMaxTime="22:00:00"
         eventDisplay="block"
+        /* Apply Tailwind gradients directly to events. Proposed / diff events
+           (those carrying a changeType) get the brand gradient; normal events
+           use a subtle dark gradient for consistency. */
+        eventClassNames={(arg: any) => {
+          const changeType = arg.event.extendedProps?.changeType;
+          const base = [
+            'rounded-md',
+            'border-0',
+            'px-1.5',
+            'py-1',
+            'text-[18px]',
+            'leading-tight',
+            'font-medium',
+            'shadow-sm',
+            'cursor-pointer',
+            'transition-colors',
+          ];
+          if (changeType) {
+            base.push('bg-gradient-subtle', 'text-black');
+          } else {
+            base.push('bg-gradient-subtle', 'text-black');
+          }
+          // Slight hover effect (FullCalendar keeps class names)
+          base.push('hover:brightness-110');
+          return base;
+        }}
       />
     </div>
   );
