@@ -2,16 +2,18 @@ import { z } from 'zod';
 import type { CalendarEvent } from './models/calendarEvent';
 import type { ChangeItem, SyncOperation } from './models/proposal';
 
-// Google Calendar API event schema
+// Google Calendar API event schema - handle both dateTime and date fields
 const GoogleCalendarEventSchema = z.object({
   id: z.string().optional(),
   summary: z.string(),
   start: z.object({
-    dateTime: z.string(),
+    dateTime: z.string().optional(),
+    date: z.string().optional(),
     timeZone: z.string().optional(),
   }),
   end: z.object({
-    dateTime: z.string(),
+    dateTime: z.string().optional(),
+    date: z.string().optional(),
     timeZone: z.string().optional(),
   }),
   description: z.string().optional(),
@@ -334,8 +336,24 @@ export class GoogleCalendarClient {
   private convertFromGoogleEvent(
     googleEvent: GoogleCalendarEvent
   ): CalendarEvent {
-    const start = googleEvent.start.dateTime;
-    const end = googleEvent.end.dateTime;
+    // Handle both dateTime (for timed events) and date (for all-day events)
+    const start = googleEvent.start.dateTime || googleEvent.start.date;
+    const end = googleEvent.end.dateTime || googleEvent.end.date;
+    
+    if (!start || !end) {
+      console.warn('Skipping event with missing start/end time:', googleEvent.summary);
+      // Return a minimal event that will be filtered out
+      return {
+        id: googleEvent.id || 'unknown',
+        title: googleEvent.summary || 'Untitled Event',
+        start: new Date().toISOString(),
+        end: new Date(Date.now() + 60000).toISOString(), // 1 minute duration
+        durationMinutes: 1,
+        source: 'current',
+        changeType: 'none',
+      };
+    }
+    
     const startTime = new Date(start).getTime();
     const endTime = new Date(end).getTime();
     const durationMinutes = Math.round((endTime - startTime) / 60000);
