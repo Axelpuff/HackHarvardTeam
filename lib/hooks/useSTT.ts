@@ -31,19 +31,25 @@ export function useSTT(options: STTOptions = {}) {
 
   // Check for browser support
   useEffect(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
     const isSupported = !!SpeechRecognition;
-    
+
     if (!isSupported) {
-      console.warn('Speech Recognition not supported in this browser. Try Chrome or Edge.');
+      console.warn(
+        'Speech Recognition not supported in this browser. Try Chrome or Edge.'
+      );
     }
-    
-    setState(prev => ({ ...prev, isSupported }));
+
+    setState((prev) => ({ ...prev, isSupported }));
   }, []);
 
   const startListening = useCallback(() => {
     if (!state.isSupported) {
-      setState(prev => ({ ...prev, error: 'Speech recognition not supported in this browser' }));
+      setState((prev) => ({
+        ...prev,
+        error: 'Speech recognition not supported in this browser',
+      }));
       return;
     }
 
@@ -52,21 +58,22 @@ export function useSTT(options: STTOptions = {}) {
     }
 
     try {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
-      
+
       recognition.continuous = options.continuous || false;
       recognition.interimResults = options.interimResults || true;
       recognition.lang = options.language || 'en-US';
       recognition.maxAlternatives = options.maxAlternatives || 1;
 
       recognition.onstart = () => {
-        setState(prev => ({ 
-          ...prev, 
-          isListening: true, 
+        setState((prev) => ({
+          ...prev,
+          isListening: true,
           error: null,
           transcript: '',
-          interimTranscript: ''
+          interimTranscript: '',
         }));
         finalTranscriptRef.current = '';
       };
@@ -77,7 +84,7 @@ export function useSTT(options: STTOptions = {}) {
 
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const transcript = event.results[i][0].transcript;
-          
+
           if (event.results[i].isFinal) {
             finalTranscript += transcript;
           } else {
@@ -86,17 +93,17 @@ export function useSTT(options: STTOptions = {}) {
         }
 
         finalTranscriptRef.current = finalTranscript;
-        
-        setState(prev => ({
+
+        setState((prev) => ({
           ...prev,
           transcript: finalTranscript,
-          interimTranscript: interimTranscript
+          interimTranscript: interimTranscript,
         }));
       };
 
       recognition.onerror = (event) => {
         let errorMessage = 'Speech recognition error';
-        
+
         switch (event.error) {
           case 'no-speech':
             errorMessage = 'No speech detected. Please try again.';
@@ -105,7 +112,8 @@ export function useSTT(options: STTOptions = {}) {
             errorMessage = 'No microphone found. Please check your microphone.';
             break;
           case 'not-allowed':
-            errorMessage = 'Microphone access denied. Please allow microphone access.';
+            errorMessage =
+              'Microphone access denied. Please allow microphone access.';
             break;
           case 'network':
             errorMessage = 'Network error. Please check your connection.';
@@ -114,23 +122,26 @@ export function useSTT(options: STTOptions = {}) {
             errorMessage = `Speech recognition error: ${event.error}`;
         }
 
-        setState(prev => ({
+        setState((prev) => ({
           ...prev,
           isListening: false,
-          error: errorMessage
+          error: errorMessage,
         }));
       };
 
       recognition.onend = () => {
-        setState(prev => ({ ...prev, isListening: false }));
+        setState((prev) => ({ ...prev, isListening: false }));
       };
 
       recognitionRef.current = recognition;
       recognition.start();
     } catch (error) {
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
-        error: error instanceof Error ? error.message : 'Failed to start speech recognition'
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to start speech recognition',
       }));
     }
   }, [state.isSupported, state.isListening, options]);
@@ -142,17 +153,17 @@ export function useSTT(options: STTOptions = {}) {
   }, [state.isListening]);
 
   const clearTranscript = useCallback(() => {
-    setState(prev => ({ 
-      ...prev, 
-      transcript: '', 
+    setState((prev) => ({
+      ...prev,
+      transcript: '',
       interimTranscript: '',
-      error: null 
+      error: null,
     }));
     finalTranscriptRef.current = '';
   }, []);
 
   const clearError = useCallback(() => {
-    setState(prev => ({ ...prev, error: null }));
+    setState((prev) => ({ ...prev, error: null }));
   }, []);
 
   // Cleanup on unmount

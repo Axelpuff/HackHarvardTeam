@@ -4,11 +4,18 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { signIn, signOut, useSession } from 'next-auth/react';
 import { CalendarPanel } from '@/components/CalendarPanel';
 import { type CalendarEvent } from '@/lib/models/calendarEvent';
+import { VoiceInput } from '@/components/VoiceInput';
 
 export default function HomePage() {
   const { data: session, status } = useSession();
   const [isConversationActive, setIsConversationActive] = useState(false);
-  const [messages, setMessages] = useState<{ role: 'system' | 'user' | 'assistant'; text: string }[]>([
+  const [conversationMode, setConversationMode] = useState<
+    'none' | 'text' | 'audio'
+  >('none');
+  const [isSpeaking, setIsSpeaking] = useState(false); // stub for TTS playback state
+  const [messages, setMessages] = useState<
+    { role: 'system' | 'user' | 'assistant'; text: string }[]
+  >([
     {
       role: 'system',
       text: "Hi! I'm here to help you optimize your schedule. What scheduling challenge are you facing?",
@@ -21,83 +28,137 @@ export default function HomePage() {
   const [hasProposal, setHasProposal] = useState(false);
   const [lastProposal, setLastProposal] = useState<any | null>(null);
   const transcriptRef = useRef<HTMLDivElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Minimal send handler calling progressive proposal endpoint
-  const handleSend = useCallback(async () => {
-    const text = pendingInput.trim();
-    if (!text || isRequesting) return;
-
-    // Append user message
-    setMessages((prev) => [...prev, { role: 'user', text }]);
-    setPendingInput('');
-    setIsRequesting(true);
-
-    // Establish problem text if first user message
-    const nextProblem = problemText || text;
-    if (!problemText) setProblemText(nextProblem);
-
-    // Clarifications exclude the initial problem statement
-    const effectiveClarifications = problemText ? [...clarifications, text] : clarifications;
-
+  // Speak text using ElevenLabs TTS via server API
+  const speakText = useCallback(async (text: string) => {
+    if (!text) return;
     try {
-      const res = await fetch('/api/proposal/next', {
+      setIsSpeaking(true);
+      const res = await fetch('/api/tts/speak', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          problemText: nextProblem,
-            clarifications: effectiveClarifications,
-            scope: 'week',
-        }),
+        body: JSON.stringify({ text }),
       });
       if (!res.ok) {
-        const errTxt = await res.text();
-        throw new Error(`API ${res.status}: ${errTxt}`);
+        console.error('TTS error', await res.text());
+        setIsSpeaking(false);
+        return;
       }
-      const data = await res.json();
-      if (data.status === 'clarify') {
-        // Store clarification & show assistant question
-        if (problemText) {
-          setClarifications(effectiveClarifications);
-        }
-        setMessages((prev) => [
-          ...prev,
-          { role: 'assistant', text: data.question as string },
-        ]);
-      } else if (data.status === 'proposal') {
-        setClarifications(effectiveClarifications);
-        setHasProposal(true);
-        setLastProposal(data.proposal);
-        setMessages((prev) => [
-          ...prev,
-          { role: 'assistant', text: 'Generated a draft proposal with suggested changes.' },
-        ]);
-        // Attempt to map proposal changes into proposedEvents if shape matches
-        if (data.proposal?.changes && Array.isArray(data.proposal.changes)) {
-          const mapped = data.proposal.changes
-            .filter((c: any) => c.event)
-            .map((c: any) => ({
-              id: c.event.id || c.id,
-              title: c.event.title,
-              start: c.event.start,
-              end: c.event.end,
-              durationMinutes: c.event.durationMinutes || Math.round((new Date(c.event.end).getTime() - new Date(c.event.start).getTime()) / 60000),
-              source: 'proposed' as const,
-              changeType: c.type,
-              originalEventId: c.targetEventId,
-            }));
-          setProposedEvents(mapped);
-        }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      if (!audioRef.current) {
+        audioRef.current = new Audio();
       }
-    } catch (err: any) {
-      console.error('Conversation send error:', err);
-      setMessages((prev) => [
-        ...prev,
-        { role: 'assistant', text: 'Sorry, I ran into an issue. Please try again.' },
-      ]);
-    } finally {
-      setIsRequesting(false);
+      audioRef.current.src = url;
+      audioRef.current.onended = () => {
+        setIsSpeaking(false);
+        URL.revokeObjectURL(url);
+      };
+      audioRef.current.onerror = () => {
+        setIsSpeaking(false);
+        URL.revokeObjectURL(url);
+      };
+      await audioRef.current.play();
+    } catch (e) {
+      console.error('speakText error', e);
+      setIsSpeaking(false);
     }
-  }, [pendingInput, isRequesting, problemText, clarifications]);
+  }, []);
+  // Minimal send handler calling progressive proposal endpoint
+  const handleSend = useCallback(
+    async (textArg?: string) => {
+      const text = (textArg ?? pendingInput).trim();
+      if (!text || isRequesting) return;
+
+      // Append user message
+      setMessages((prev) => [...prev, { role: 'user', text }]);
+      setPendingInput('');
+      setIsRequesting(true);
+
+      // Establish problem text if first user message
+      const nextProblem = problemText || text;
+      if (!problemText) setProblemText(nextProblem);
+
+      // Clarifications exclude the initial problem statement
+      const effectiveClarifications = problemText
+        ? [...clarifications, text]
+        : clarifications;
+
+      try {
+        const res = await fetch('/api/proposal/next', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            problemText: nextProblem,
+            clarifications: effectiveClarifications,
+            scope: 'week',
+          }),
+        });
+
+        if (!res.ok) {
+          const errTxt = await res.text();
+          throw new Error(`API ${res.status}: ${errTxt}`);
+        }
+
+        const data = await res.json();
+        if (data.status === 'clarify') {
+          if (problemText) setClarifications(effectiveClarifications);
+          const questionText = data.question as string;
+          setMessages((prev) => [
+            ...prev,
+            { role: 'assistant', text: questionText },
+          ]);
+          speakText(questionText);
+        } else if (data.status === 'proposal') {
+          setClarifications(effectiveClarifications);
+          setHasProposal(true);
+          setLastProposal(data.proposal);
+          const proposalMsg =
+            'Generated a draft proposal with suggested changes.';
+          setMessages((prev) => [
+            ...prev,
+            { role: 'assistant', text: proposalMsg },
+          ]);
+          speakText(proposalMsg);
+
+          if (data.proposal?.changes && Array.isArray(data.proposal.changes)) {
+            const mapped = data.proposal.changes
+              .filter((c: any) => c.event)
+              .map((c: any) => ({
+                id: c.event.id || c.id,
+                title: c.event.title,
+                start: c.event.start,
+                end: c.event.end,
+                durationMinutes:
+                  c.event.durationMinutes ||
+                  Math.round(
+                    (new Date(c.event.end).getTime() -
+                      new Date(c.event.start).getTime()) /
+                      60000
+                  ),
+                source: 'proposed' as const,
+                changeType: c.type,
+                originalEventId: c.targetEventId,
+              }));
+            setProposedEvents(mapped);
+          }
+        }
+      } catch (err: any) {
+        console.error('Conversation send error:', err);
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            text: 'Sorry, I ran into an issue. Please try again.',
+          },
+        ]);
+      } finally {
+        setIsRequesting(false);
+      }
+    },
+    [pendingInput, isRequesting, problemText, clarifications, speakText]
+  );
   // State for current calendar events
   const [currentEvents, setCurrentEvents] = useState<CalendarEvent[]>([]);
   const [isLoadingCurrent, setIsLoadingCurrent] = useState(false);
@@ -143,6 +204,8 @@ export default function HomePage() {
     };
   }, [isConversationActive]);
 
+  // Voice input is now provided by the shared VoiceInput component
+
   // Auto-scroll transcript when messages or loading state change
   // NOTE: This must be declared BEFORE any conditional returns to preserve hook order
   useEffect(() => {
@@ -156,12 +219,14 @@ export default function HomePage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div 
+          <div
             className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"
             role="status"
             aria-label="Loading application"
           ></div>
-          <p className="text-gray-600" aria-live="polite">Loading...</p>
+          <p className="text-gray-600" aria-live="polite">
+            Loading...
+          </p>
         </div>
       </div>
     );
@@ -170,13 +235,17 @@ export default function HomePage() {
   if (!session) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <main className="max-w-md w-full bg-white rounded-lg shadow-md p-8" role="main">
+        <main
+          className="max-w-md w-full bg-white rounded-lg shadow-md p-8"
+          role="main"
+        >
           <div className="text-center">
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
               AI Schedule Counseling Assistant
             </h1>
             <p className="text-gray-600 mb-6">
-              Connect your Google Calendar to get personalized scheduling assistance
+              Connect your Google Calendar to get personalized scheduling
+              assistance
             </p>
             <button
               onClick={() => signIn('google')}
@@ -200,8 +269,15 @@ export default function HomePage() {
             <h1 className="text-xl font-semibold text-gray-900">
               AI Schedule Assistant
             </h1>
-            <nav className="flex items-center space-x-4" role="navigation" aria-label="User navigation">
-              <span className="text-sm text-gray-600" aria-label={`Signed in as ${session.user?.email}`}>
+            <nav
+              className="flex items-center space-x-4"
+              role="navigation"
+              aria-label="User navigation"
+            >
+              <span
+                className="text-sm text-gray-600"
+                aria-label={`Signed in as ${session.user?.email}`}
+              >
                 {session.user?.email}
               </span>
               <button
@@ -220,8 +296,17 @@ export default function HomePage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" role="main">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Calendar Panel - Current Events (uses shared component) */}
-          <section className="lg:col-span-1" aria-labelledby="current-schedule-heading">
-            <div aria-hidden="true" className="sr-only" id="current-schedule-heading">Current Schedule</div>
+          <section
+            className="lg:col-span-1"
+            aria-labelledby="current-schedule-heading"
+          >
+            <div
+              aria-hidden="true"
+              className="sr-only"
+              id="current-schedule-heading"
+            >
+              Current Schedule
+            </div>
             <div data-testid="calendar-current">
               <CalendarPanel
                 title="Current Schedule"
@@ -232,10 +317,19 @@ export default function HomePage() {
           </section>
 
           {/* Conversation Panel */}
-          <section className="lg:col-span-1" aria-labelledby="conversation-heading">
-            <div className="bg-white rounded-lg shadow-sm border h-96 flex flex-col" data-testid="conversation-panel">
+          <section
+            className="lg:col-span-1"
+            aria-labelledby="conversation-heading"
+          >
+            <div
+              className="bg-white rounded-lg shadow-sm border h-96 flex flex-col"
+              data-testid="conversation-panel"
+            >
               <div className="p-4 border-b">
-                <h2 id="conversation-heading" className="text-lg font-medium text-gray-900">
+                <h2
+                  id="conversation-heading"
+                  className="text-lg font-medium text-gray-900"
+                >
                   Conversation
                 </h2>
               </div>
@@ -246,17 +340,57 @@ export default function HomePage() {
                       <p className="text-gray-500 mb-4">
                         Ready to help with your schedule
                       </p>
-                      <button
-                        onClick={() => setIsConversationActive(true)}
-                        className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-                        aria-label="Start a conversation with the AI schedule assistant"
-                      >
-                        Start Conversation
-                      </button>
+                      <div className="space-x-3">
+                        <button
+                          onClick={() => {
+                            setIsConversationActive(true);
+                            setConversationMode('text');
+                          }}
+                          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                          aria-label="Start a text chat with the AI schedule assistant"
+                        >
+                          Start Text Chat
+                        </button>
+                        <button
+                          onClick={() => {
+                            setIsConversationActive(true);
+                            setConversationMode('audio');
+                          }}
+                          className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
+                          aria-label="Start an audio conversation with the AI schedule assistant"
+                        >
+                          Start Audio Conversation
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ) : (
                   <div className="flex-1 flex flex-col min-h-0">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => setConversationMode('text')}
+                          className={`text-sm px-2 py-1 rounded ${conversationMode === 'text' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700'}`}
+                          aria-label="Switch to text mode"
+                        >
+                          Text
+                        </button>
+                        <button
+                          onClick={() => setConversationMode('audio')}
+                          className={`text-sm px-2 py-1 rounded ${conversationMode === 'audio' ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-100 text-gray-700'}`}
+                          aria-label="Switch to audio mode"
+                        >
+                          Audio
+                        </button>
+                      </div>
+                      {conversationMode === 'audio' && (
+                        <div className="flex items-center space-x-2">
+                          <div className="text-sm text-gray-600">
+                            {isSpeaking ? 'Speaking...' : 'Audio mode active'}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                     <div
                       ref={transcriptRef}
                       className="flex-1 overflow-y-auto mb-4 p-2 bg-gray-50 rounded text-sm"
@@ -267,39 +401,69 @@ export default function HomePage() {
                     >
                       {messages.map((m, idx) => (
                         <div key={idx} className="mb-2" role="listitem">
-                          <span className="font-semibold text-gray-900 capitalize">{m.role}:</span> <span className="text-gray-900">{m.text}</span>
+                          <span className="font-semibold text-gray-900 capitalize">
+                            {m.role}:
+                          </span>{' '}
+                          <span className="text-gray-900">{m.text}</span>
                         </div>
                       ))}
                       {isRequesting && (
-                        <div className="text-gray-500 italic" role="status">Thinking...</div>
+                        <div className="text-gray-500 italic" role="status">
+                          Thinking...
+                        </div>
                       )}
                     </div>
-                    <form className="flex space-x-2" onSubmit={(e) => { e.preventDefault(); handleSend(); }}>
-                      <label htmlFor="message-input" className="sr-only">
-                        Type your message to the AI assistant
-                      </label>
-                      <input
-                        id="message-input"
-                        type="text"
-                        placeholder="Type your message or use voice..."
-                        className="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        aria-describedby="message-help"
-                        value={pendingInput}
-                        disabled={isRequesting}
-                        onChange={(e) => setPendingInput(e.target.value)}
-                      />
-                      <span id="message-help" className="sr-only">
-                        Enter your scheduling question or concern to get personalized assistance
-                      </span>
-                      <button 
-                        type="submit"
-                        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-                        aria-label="Send message to AI assistant"
-                        disabled={isRequesting || !pendingInput.trim()}
+                    {conversationMode === 'text' && (
+                      <form
+                        className="flex space-x-2"
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          handleSend();
+                        }}
                       >
-                        {hasProposal ? 'Refine' : 'Send'}
-                      </button>
-                    </form>
+                        <label htmlFor="message-input" className="sr-only">
+                          Type your message to the AI assistant
+                        </label>
+                        <input
+                          id="message-input"
+                          type="text"
+                          placeholder="Type your message or use voice..."
+                          className="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          aria-describedby="message-help"
+                          value={pendingInput}
+                          disabled={isRequesting}
+                          onChange={(e) => setPendingInput(e.target.value)}
+                        />
+                        <span id="message-help" className="sr-only">
+                          Enter your scheduling question or concern to get
+                          personalized assistance
+                        </span>
+                        <button
+                          type="submit"
+                          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                          aria-label="Send message to AI assistant"
+                          disabled={isRequesting || !pendingInput.trim()}
+                        >
+                          {hasProposal ? 'Refine' : 'Send'}
+                        </button>
+                      </form>
+                    )}
+                    {conversationMode === 'audio' && (
+                      <div className="mt-2">
+                        <VoiceInput
+                          autoStart
+                          autoSubmit
+                          onTranscript={(t) => {
+                            // populate pending input and send immediately
+                            setPendingInput(t);
+                            if (!isRequesting) {
+                              // small timeout to ensure state updates
+                              setTimeout(() => handleSend(t), 50);
+                            }
+                          }}
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -307,8 +471,13 @@ export default function HomePage() {
           </section>
 
           {/* Proposal Panel - Proposed Changes (uses shared component) */}
-          <section className="lg:col-span-1" aria-labelledby="proposals-heading">
-            <div aria-hidden="true" className="sr-only" id="proposals-heading">Proposed Changes</div>
+          <section
+            className="lg:col-span-1"
+            aria-labelledby="proposals-heading"
+          >
+            <div aria-hidden="true" className="sr-only" id="proposals-heading">
+              Proposed Changes
+            </div>
             <div data-testid="calendar-proposed">
               <CalendarPanel
                 title="Proposed Changes"
@@ -324,20 +493,20 @@ export default function HomePage() {
         {isConversationActive && (
           <section className="mt-8" aria-label="Schedule management actions">
             <div className="flex justify-center space-x-4" role="group">
-              <button 
+              <button
                 className="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 transition-colors"
                 aria-label="Apply selected schedule changes to your Google Calendar"
                 disabled
               >
                 Apply Changes
               </button>
-              <button 
+              <button
                 className="bg-gray-600 text-white px-6 py-2 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
                 aria-label="Undo the last applied changes to your calendar"
               >
                 Undo Last Apply
               </button>
-              <button 
+              <button
                 className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
                 aria-label="Export conversation transcript as text file"
               >
