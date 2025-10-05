@@ -28,6 +28,7 @@ export default function HomePage() {
   const [isRequesting, setIsRequesting] = useState(false);
   const [hasProposal, setHasProposal] = useState(false);
   const [lastProposal, setLastProposal] = useState<any | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
   const transcriptRef = useRef<HTMLDivElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -160,6 +161,69 @@ export default function HomePage() {
     },
     [pendingInput, isRequesting, problemText, clarifications, speakText]
   );
+
+  // Export transcript handler
+  const handleExportTranscript = useCallback(async () => {
+    if (isExporting) return;
+    
+    setIsExporting(true);
+    try {
+      const response = await fetch('/api/export/transcript', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          conversation: messages.map(msg => ({
+            role: msg.role,
+            text: msg.text,
+            timestamp: new Date().toISOString(),
+          })),
+          proposedEvents: proposedEvents.map(event => ({
+            id: event.id,
+            title: event.title,
+            start: event.start,
+            end: event.end,
+            durationMinutes: event.durationMinutes,
+            changeType: (event as any).changeType || 'unknown',
+            rationale: (event as any).rationale || '',
+          })),
+          scope: 'day', // Export current day by default
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Export failed: ${response.status}`);
+      }
+
+      // Create download link
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      
+      // Get filename from response headers or use default
+      const contentDisposition = response.headers.get('content-disposition');
+      const filename = contentDisposition 
+        ? contentDisposition.split('filename=')[1]?.replace(/"/g, '')
+        : `scheduling-transcript-${new Date().toISOString().slice(0, 10)}.csv`;
+      
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+    } catch (error) {
+      console.error('Export error:', error);
+      // You could add a toast notification here
+      alert('Failed to export transcript. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  }, [isExporting, messages, proposedEvents]);
+
   // State for current calendar events
   const [currentEvents, setCurrentEvents] = useState<CalendarEvent[]>([]);
   const [isLoadingCurrent, setIsLoadingCurrent] = useState(false);
@@ -576,10 +640,12 @@ export default function HomePage() {
                 Undo Last Apply
               </button>
               <button
-                className={`border font-semibold px-6 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-mint focus:ring-offset-2 transition-all duration-200 transform hover:scale-[1.02] ${isDarkMode ? 'bg-brand-dark/60 border-brand-teal/40 text-brand-mint hover:bg-brand-dark/80 focus:ring-offset-gray-950' : 'bg-white border-gray-300 text-brand-teal hover:bg-gray-50 focus:ring-offset-white'}`}
-                aria-label="Export conversation transcript as text file"
+                onClick={handleExportTranscript}
+                disabled={isExporting}
+                className={`border font-semibold px-6 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-mint focus:ring-offset-2 transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed ${isDarkMode ? 'bg-brand-dark/60 border-brand-teal/40 text-brand-mint hover:bg-brand-dark/80 focus:ring-offset-gray-950' : 'bg-white border-gray-300 text-brand-teal hover:bg-gray-50 focus:ring-offset-white'}`}
+                aria-label="Export conversation transcript as CSV file"
               >
-                Export Transcript
+                {isExporting ? 'Exporting...' : 'Export Transcript'}
               </button>
             </div>
           </section>
