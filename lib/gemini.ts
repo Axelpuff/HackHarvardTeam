@@ -19,7 +19,7 @@ const GeminiResponseSchema = z.object({
 
 // Configuration
 const GEMINI_API_URL =
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 1000;
 
@@ -92,6 +92,34 @@ export class GeminiClient {
       }
       throw error;
     }
+  }
+
+  /**
+   * Generate a general chat response
+   */
+  async generateChatResponse(
+    userMessage: string,
+    conversationHistory: Array<{role: string, content: string}> = []
+  ): Promise<string> {
+    const prompt = `
+You are an AI scheduling assistant. Help users optimize their schedules through natural conversation.
+
+CONVERSATION HISTORY:
+${conversationHistory.map(msg => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`).join('\n')}
+
+CURRENT USER MESSAGE: "${userMessage}"
+
+INSTRUCTIONS:
+- Respond naturally and helpfully to the user's message
+- If they ask about scheduling, provide specific advice
+- If they ask unrelated questions, politely redirect to scheduling topics
+- Be conversational and empathetic
+- Keep responses concise but helpful
+- Focus on calendar optimization, time management, and productivity
+
+Respond as a helpful scheduling assistant:`;
+
+    return this.makeRequest(prompt);
   }
 
   /**
