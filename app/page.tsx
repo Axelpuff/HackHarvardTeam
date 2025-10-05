@@ -8,6 +8,7 @@ import { type CalendarEvent } from '@/lib/models/calendarEvent';
 export default function HomePage() {
   const { data: session, status } = useSession();
   const [isConversationActive, setIsConversationActive] = useState(false);
+  const [conversationMode, setConversationMode] = useState<'none' | 'text' | 'audio'>('none');
   const [messages, setMessages] = useState<{ role: 'system' | 'user' | 'assistant'; text: string }[]>([
     {
       role: 'system',
@@ -246,17 +247,26 @@ export default function HomePage() {
                       <p className="text-gray-500 mb-4">
                         Ready to help with your schedule
                       </p>
-                      <button
-                        onClick={() => setIsConversationActive(true)}
-                        className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-                        aria-label="Start a conversation with the AI schedule assistant"
-                      >
-                        Start Conversation
-                      </button>
+                      <div className="space-x-3">
+                        <button
+                          onClick={() => { setIsConversationActive(true); setConversationMode('text'); }}
+                          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                          aria-label="Start a text chat with the AI schedule assistant"
+                        >
+                          Start Text Chat
+                        </button>
+                        <button
+                          onClick={() => { setIsConversationActive(true); setConversationMode('audio'); }}
+                          className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
+                          aria-label="Start an audio conversation with the AI schedule assistant"
+                        >
+                          Start Audio Conversation
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex-1 flex flex-col min-h-0">
+                    <div className="flex-1 flex flex-col min-h-0">
                     <div
                       ref={transcriptRef}
                       className="flex-1 overflow-y-auto mb-4 p-2 bg-gray-50 rounded text-sm"
@@ -274,7 +284,8 @@ export default function HomePage() {
                         <div className="text-gray-500 italic" role="status">Thinking...</div>
                       )}
                     </div>
-                    <form className="flex space-x-2" onSubmit={(e) => { e.preventDefault(); handleSend(); }}>
+                    {conversationMode === 'text' && (
+                      <form className="flex space-x-2" onSubmit={(e) => { e.preventDefault(); handleSend(); }}>
                       <label htmlFor="message-input" className="sr-only">
                         Type your message to the AI assistant
                       </label>
@@ -300,6 +311,12 @@ export default function HomePage() {
                         {hasProposal ? 'Refine' : 'Send'}
                       </button>
                     </form>
+                    )}
+                    {conversationMode === 'audio' && (
+                      <div className="text-center text-sm text-gray-500 mt-2" aria-hidden>
+                        Audio conversation active — transcript will appear here. Use your microphone controls to speak.
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
