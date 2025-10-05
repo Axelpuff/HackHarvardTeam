@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { signIn, signOut, useSession } from 'next-auth/react';
 import { CalendarPanel } from '@/components/CalendarPanel';
 import { type CalendarEvent } from '@/lib/models/calendarEvent';
+import { VoiceInput } from '@/components/VoiceInput';
 
 export default function HomePage() {
   const { data: session, status } = useSession();
@@ -11,13 +12,7 @@ export default function HomePage() {
   const [conversationMode, setConversationMode] = useState<
     'none' | 'text' | 'audio'
   >('none');
-  const [isRecordingActive, setIsRecordingActive] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false); // stub for TTS playback state
-  const [recordStartedAt, setRecordStartedAt] = useState<number | null>(null);
-  const [recordElapsed, setRecordElapsed] = useState(0);
-  const recognitionRef = useRef<any | null>(null);
-  const audioTranscriptRef = useRef<string>('');
   const [messages, setMessages] = useState<
     { role: 'system' | 'user' | 'assistant'; text: string }[]
   >([
@@ -71,94 +66,99 @@ export default function HomePage() {
     }
   }, []);
   // Minimal send handler calling progressive proposal endpoint
-  const handleSend = useCallback(async () => {
-    const text = pendingInput.trim();
-    if (!text || isRequesting) return;
+  const handleSend = useCallback(
+    async (textArg?: string) => {
+      const text = (textArg ?? pendingInput).trim();
+      if (!text || isRequesting) return;
 
-    // Append user message
-    setMessages((prev) => [...prev, { role: 'user', text }]);
-    setPendingInput('');
-    setIsRequesting(true);
+      // Append user message
+      setMessages((prev) => [...prev, { role: 'user', text }]);
+      setPendingInput('');
+      setIsRequesting(true);
 
-    // Establish problem text if first user message
-    const nextProblem = problemText || text;
-    if (!problemText) setProblemText(nextProblem);
+      // Establish problem text if first user message
+      const nextProblem = problemText || text;
+      if (!problemText) setProblemText(nextProblem);
 
-    // Clarifications exclude the initial problem statement
-    const effectiveClarifications = problemText
-      ? [...clarifications, text]
-      : clarifications;
+      // Clarifications exclude the initial problem statement
+      const effectiveClarifications = problemText
+        ? [...clarifications, text]
+        : clarifications;
 
-    try {
-      const res = await fetch('/api/proposal/next', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          problemText: nextProblem,
-          clarifications: effectiveClarifications,
-          scope: 'week',
-        }),
-      });
-      if (!res.ok) {
-        const errTxt = await res.text();
-        throw new Error(`API ${res.status}: ${errTxt}`);
-      }
-      const data = await res.json();
-      if (data.status === 'clarify') {
-        if (problemText) setClarifications(effectiveClarifications);
-        const questionText = data.question as string;
-        setMessages((prev) => [
-          ...prev,
-          { role: 'assistant', text: questionText },
-        ]);
-        speakText(questionText);
-      } else if (data.status === 'proposal') {
-        setClarifications(effectiveClarifications);
-        setHasProposal(true);
-        setLastProposal(data.proposal);
-        const proposalMsg =
-          'Generated a draft proposal with suggested changes.';
-        setMessages((prev) => [
-          ...prev,
-          { role: 'assistant', text: proposalMsg },
-        ]);
-        speakText(proposalMsg);
+      try {
+        const res = await fetch('/api/proposal/next', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            problemText: nextProblem,
+            clarifications: effectiveClarifications,
+            scope: 'week',
+          }),
+        });
 
-        if (data.proposal?.changes && Array.isArray(data.proposal.changes)) {
-          const mapped = data.proposal.changes
-            .filter((c: any) => c.event)
-            .map((c: any) => ({
-              id: c.event.id || c.id,
-              title: c.event.title,
-              start: c.event.start,
-              end: c.event.end,
-              durationMinutes:
-                c.event.durationMinutes ||
-                Math.round(
-                  (new Date(c.event.end).getTime() -
-                    new Date(c.event.start).getTime()) /
-                    60000
-                ),
-              source: 'proposed' as const,
-              changeType: c.type,
-              originalEventId: c.targetEventId,
-            }));
-          setProposedEvents(mapped);
+        if (!res.ok) {
+          const errTxt = await res.text();
+          throw new Error(`API ${res.status}: ${errTxt}`);
         }
+
+        const data = await res.json();
+        if (data.status === 'clarify') {
+          if (problemText) setClarifications(effectiveClarifications);
+          const questionText = data.question as string;
+          setMessages((prev) => [
+            ...prev,
+            { role: 'assistant', text: questionText },
+          ]);
+          speakText(questionText);
+        } else if (data.status === 'proposal') {
+          setClarifications(effectiveClarifications);
+          setHasProposal(true);
+          setLastProposal(data.proposal);
+          const proposalMsg =
+            'Generated a draft proposal with suggested changes.';
+          setMessages((prev) => [
+            ...prev,
+            { role: 'assistant', text: proposalMsg },
+          ]);
+          speakText(proposalMsg);
+
+          if (data.proposal?.changes && Array.isArray(data.proposal.changes)) {
+            const mapped = data.proposal.changes
+              .filter((c: any) => c.event)
+              .map((c: any) => ({
+                id: c.event.id || c.id,
+                title: c.event.title,
+                start: c.event.start,
+                end: c.event.end,
+                durationMinutes:
+                  c.event.durationMinutes ||
+                  Math.round(
+                    (new Date(c.event.end).getTime() -
+                      new Date(c.event.start).getTime()) /
+                      60000
+                  ),
+                source: 'proposed' as const,
+                changeType: c.type,
+                originalEventId: c.targetEventId,
+              }));
+            setProposedEvents(mapped);
+          }
+        }
+      } catch (err: any) {
+        console.error('Conversation send error:', err);
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            text: 'Sorry, I ran into an issue. Please try again.',
+          },
+        ]);
+      } finally {
+        setIsRequesting(false);
       }
-    } catch (err: any) {
-      console.error('Conversation send error:', err);
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          text: 'Sorry, I ran into an issue. Please try again.',
-        },
-      ]);
-    } finally {
-      setIsRequesting(false);
-    }
-  }, [pendingInput, isRequesting, problemText, clarifications, speakText]);
+    },
+    [pendingInput, isRequesting, problemText, clarifications, speakText]
+  );
   // State for current calendar events
   const [currentEvents, setCurrentEvents] = useState<CalendarEvent[]>([]);
   const [isLoadingCurrent, setIsLoadingCurrent] = useState(false);
@@ -204,166 +204,7 @@ export default function HomePage() {
     };
   }, [isConversationActive]);
 
-  // Start/stop speech recognition when entering/exiting audio mode
-  useEffect(() => {
-    // Helper to get SpeechRecognition constructor
-    const SpeechRecognition =
-      (window as any).SpeechRecognition ||
-      (window as any).webkitSpeechRecognition;
-
-    const startRecognition = () => {
-      if (!SpeechRecognition) return;
-      if (recognitionRef.current) return; // already started
-      const r = new SpeechRecognition();
-      r.lang = 'en-US';
-      r.interimResults = true;
-      r.continuous = true;
-
-      r.onstart = () => {
-        setIsRecordingActive(true);
-        setIsPaused(false);
-        setRecordStartedAt(Date.now());
-      };
-
-      r.onresult = (event: any) => {
-        let interim = '';
-        let final = '';
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          const res = event.results[i];
-          if (res.isFinal) final += res[0].transcript;
-          else interim += res[0].transcript;
-        }
-        // update current audio transcript
-        audioTranscriptRef.current = (audioTranscriptRef.current || '') + final;
-        // show interim in pendingInput so user sees it
-        setPendingInput((prev) => (prev ? prev + ' ' : '') + interim);
-        // when finalized text arrives, send automatically
-        if (final.trim()) {
-          const text = (audioTranscriptRef.current || '').trim();
-          setPendingInput(text);
-          // call send if not requesting
-          if (!isRequesting) {
-            // small timeout to ensure state updates
-            setTimeout(() => handleSend(), 50);
-          }
-        }
-      };
-
-      r.onerror = (e: any) => {
-        console.error('SpeechRecognition error', e);
-      };
-
-      r.onend = () => {
-        // when recognition ends unexpectedly, reflect paused state
-        setIsRecordingActive(false);
-        setRecordStartedAt(null);
-      };
-
-      recognitionRef.current = r;
-      try {
-        r.start();
-      } catch (e) {
-        // ignore start errors
-      }
-    };
-
-    const stopRecognition = () => {
-      const r = recognitionRef.current;
-      if (r) {
-        try {
-          r.stop();
-        } catch (e) {}
-        recognitionRef.current = null;
-      }
-      setIsRecordingActive(false);
-      setRecordStartedAt(null);
-    };
-
-    if (conversationMode === 'audio') {
-      // auto-start recording immediately
-      startRecognition();
-    } else {
-      stopRecognition();
-      audioTranscriptRef.current = '';
-      setIsPaused(false);
-    }
-
-    return () => {
-      // cleanup
-      if (recognitionRef.current) {
-        try {
-          recognitionRef.current.stop();
-        } catch (e) {}
-        recognitionRef.current = null;
-      }
-    };
-  }, [conversationMode, handleSend, isRequesting]);
-
-  // Timer for recording elapsed
-  useEffect(() => {
-    let intv: any = null;
-    if (isRecordingActive && recordStartedAt) {
-      intv = setInterval(() => {
-        setRecordElapsed(Math.floor((Date.now() - recordStartedAt) / 1000));
-      }, 500);
-    } else {
-      setRecordElapsed(0);
-    }
-    return () => {
-      if (intv) clearInterval(intv);
-    };
-  }, [isRecordingActive, recordStartedAt]);
-
-  // Pause/resume toggle
-  const togglePauseResume = () => {
-    if (isPaused) {
-      // resume
-      const r =
-        (window as any).SpeechRecognition ||
-        (window as any).webkitSpeechRecognition;
-      if (!r) return;
-      if (!recognitionRef.current) {
-        // create a new one by switching conversationMode to audio (effect will start)
-        setConversationMode('audio');
-        return;
-      }
-      try {
-        recognitionRef.current.start();
-      } catch (e) {}
-      setIsPaused(false);
-      setIsRecordingActive(true);
-      setRecordStartedAt((prev) => prev || Date.now());
-    } else {
-      // pause: stop recognition but keep the current chunk
-      if (recognitionRef.current) {
-        try {
-          recognitionRef.current.stop();
-        } catch (e) {}
-        recognitionRef.current = null;
-      }
-      setIsPaused(true);
-      setIsRecordingActive(false);
-      // keep recordStartedAt so elapsed resets only when fully stopped
-    }
-  };
-
-  // Stop button: if AI speaking -> stop playback; else pause input
-  const handleStop = () => {
-    if (isSpeaking) {
-      // stop TTS playback (stub)
-      setIsSpeaking(false);
-      return;
-    }
-    // otherwise pause recording
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.stop();
-      } catch (e) {}
-      recognitionRef.current = null;
-    }
-    setIsPaused(true);
-    setIsRecordingActive(false);
-  };
+  // Voice input is now provided by the shared VoiceInput component
 
   // Auto-scroll transcript when messages or loading state change
   // NOTE: This must be declared BEFORE any conditional returns to preserve hook order
@@ -544,34 +385,9 @@ export default function HomePage() {
                       </div>
                       {conversationMode === 'audio' && (
                         <div className="flex items-center space-x-2">
-                          <div className="flex items-center space-x-2 text-sm text-gray-600">
-                            <span
-                              className={`h-3 w-3 rounded-full ${isRecordingActive ? 'bg-red-500 animate-pulse' : 'bg-gray-300'}`}
-                            ></span>
-                            <span>
-                              {isRecordingActive
-                                ? `${String(Math.floor(recordElapsed / 60)).padStart(2, '0')}:${String(recordElapsed % 60).padStart(2, '0')}`
-                                : isPaused
-                                  ? 'Paused'
-                                  : 'Ready'}
-                            </span>
+                          <div className="text-sm text-gray-600">
+                            {isSpeaking ? 'Speaking...' : 'Audio mode active'}
                           </div>
-                          <button
-                            onClick={togglePauseResume}
-                            className="text-sm bg-gray-200 px-2 py-1 rounded"
-                            aria-label={
-                              isPaused ? 'Resume recording' : 'Pause recording'
-                            }
-                          >
-                            {isPaused ? 'Resume' : 'Pause'}
-                          </button>
-                          <button
-                            onClick={handleStop}
-                            className="text-sm bg-red-600 text-white px-2 py-1 rounded"
-                            aria-label="Stop conversation or stop playback"
-                          >
-                            Stop
-                          </button>
                         </div>
                       )}
                     </div>
@@ -633,12 +449,19 @@ export default function HomePage() {
                       </form>
                     )}
                     {conversationMode === 'audio' && (
-                      <div
-                        className="text-center text-sm text-gray-500 mt-2"
-                        aria-hidden
-                      >
-                        Audio conversation active — transcript will appear here.
-                        Use your microphone controls to speak.
+                      <div className="mt-2">
+                        <VoiceInput
+                          autoStart
+                          autoSubmit
+                          onTranscript={(t) => {
+                            // populate pending input and send immediately
+                            setPendingInput(t);
+                            if (!isRequesting) {
+                              // small timeout to ensure state updates
+                              setTimeout(() => handleSend(t), 50);
+                            }
+                          }}
+                        />
                       </div>
                     )}
                   </div>

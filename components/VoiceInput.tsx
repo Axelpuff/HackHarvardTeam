@@ -12,56 +12,80 @@ interface VoiceInputProps {
   size?: 'sm' | 'md' | 'lg';
   disabled?: boolean;
   autoSubmit?: boolean;
+  autoStart?: boolean;
 }
 
 export function VoiceInput({
   onTranscript,
   onStart,
   onStop,
-  placeholder = "Click to speak or type...",
-  className = "",
-  size = "md",
+  placeholder = 'Click to speak or type...',
+  className = '',
+  size = 'md',
   disabled = false,
-  autoSubmit = false
+  autoSubmit = false,
+  autoStart = false,
 }: VoiceInputProps) {
-  const { 
-    isListening, 
-    isSupported, 
-    transcript, 
-    interimTranscript, 
-    error, 
-    startListening, 
-    stopListening, 
+  const {
+    isListening,
+    isSupported,
+    transcript,
+    interimTranscript,
+    error,
+    startListening,
+    stopListening,
     clearTranscript,
-    clearError 
+    clearError,
   } = useSTT();
+
+  // Auto-start listening when requested
+  useEffect(() => {
+    if (autoStart && !isListening && isSupported) {
+      clearTranscript();
+      lastTranscriptRef.current = '';
+      startListening();
+      onStart?.();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoStart]);
 
   const [inputValue, setInputValue] = useState('');
   const [showError, setShowError] = useState(false);
   const lastTranscriptRef = useRef<string>('');
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  const handleSubmit = () => {
+    if (inputValue.trim()) {
+      onTranscript?.(inputValue.trim());
+      setInputValue('');
+    }
+  };
+
   // Update input value when transcript changes
   useEffect(() => {
-    if (transcript && transcript.trim() && transcript !== lastTranscriptRef.current) {
+    if (
+      transcript &&
+      transcript.trim() &&
+      transcript !== lastTranscriptRef.current
+    ) {
       setInputValue(transcript);
       lastTranscriptRef.current = transcript;
-      
+
       // Clear any existing timeout
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
-      
+
       // Debounce the onTranscript callback
       timeoutRef.current = setTimeout(() => {
         onTranscript?.(transcript);
-        
+
         if (autoSubmit) {
           handleSubmit();
         }
       }, 500); // 500ms debounce
     }
-    
+
     // Cleanup timeout on unmount
     return () => {
       if (timeoutRef.current) {
@@ -98,13 +122,6 @@ export function VoiceInput({
       }
     };
   }, []);
-
-  const handleSubmit = () => {
-    if (inputValue.trim()) {
-      onTranscript?.(inputValue.trim());
-      setInputValue('');
-    }
-  };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -164,11 +181,11 @@ export function VoiceInput({
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
         onKeyPress={handleKeyPress}
-        placeholder={isListening ? "Listening..." : placeholder}
+        placeholder={isListening ? 'Listening...' : placeholder}
         disabled={disabled || isListening}
         className={`flex-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 ${sizeClasses[size]}`}
       />
-      
+
       <button
         onClick={handleVoiceToggle}
         disabled={disabled}
@@ -181,15 +198,23 @@ export function VoiceInput({
       >
         {isListening ? (
           <div className={`${iconSize[size]} animate-pulse`}>
-            <svg className="w-full h-full" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
-              <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+            <svg
+              className="w-full h-full"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
+              <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
             </svg>
           </div>
         ) : (
-          <svg className={iconSize[size]} fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
-            <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+          <svg
+            className={iconSize[size]}
+            fill="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
+            <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
           </svg>
         )}
       </button>
@@ -218,9 +243,7 @@ export function VoiceInput({
       )}
 
       {isListening && (
-        <div className="text-xs text-red-600 animate-pulse">
-          Listening...
-        </div>
+        <div className="text-xs text-red-600 animate-pulse">Listening...</div>
       )}
     </div>
   );
