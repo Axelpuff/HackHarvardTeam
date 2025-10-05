@@ -11,7 +11,7 @@ import { useCalendarEvents } from '@/hooks/useCalendarEvents';
 export default function HomePage() {
   const { data: session, status } = useSession();
   const [isConversationActive, setIsConversationActive] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const [conversationMode, setConversationMode] = useState<
     'none' | 'text' | 'audio'
   >('none');
@@ -430,7 +430,7 @@ export default function HomePage() {
         <div className="mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-start items-center h-20 relative">
             <img
-              src="/clarity-logo-2.png"
+              src="/clarity-logo.png"
               alt="Clarity"
               className="h-16 w-auto drop-shadow-[0_0_15px_rgba(111,222,182,0.2)]"
             />
@@ -613,7 +613,7 @@ export default function HomePage() {
                     </div>
                     <div
                       ref={transcriptRef}
-                      className="flex-1 overflow-y-auto mb-4 p-4 bg-white dark:bg-gray-900 rounded-lg lg:rounded-none text-sm space-y-3"
+                      className="flex-1 overflow-y-auto mb-4 p-4 bg-white dark:bg-gray-900 rounded-lg lg:rounded-none text-sm space-y-3 text-gray-900 dark:text-gray-100"
                       role="log"
                       aria-label="Conversation transcript"
                       aria-live="polite"
@@ -624,11 +624,11 @@ export default function HomePage() {
                           <div
                             className={`inline-block max-w-[85%] p-3 rounded-lg ${
                               m.role === 'user'
-                                ? 'bg-gradient-to-r from-brand-mint/20 to-brand-mint/10 text-gray-900 self-end'
-                                : 'bg-gray-50 dark:bg-gray-800 text-gray-900'
+                                ? 'bg-gradient-to-r from-brand-mint/20 to-brand-mint/10 text-gray-900 dark:text-gray-100 self-end'
+                                : 'bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100'
                             } ${m.role === 'assistant' ? 'ml-0' : 'ml-auto'}`}
                           >
-                            <div className="text-xs font-semibold text-gray-600 capitalize mb-1">
+                            <div className="text-xs font-semibold text-gray-600 dark:text-gray-300 capitalize mb-1">
                               {m.role}
                             </div>
                             <div className="whitespace-pre-wrap">{m.text}</div>

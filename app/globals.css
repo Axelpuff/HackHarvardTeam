@@ -44,7 +44,7 @@ body {
 /* Color variables for grid lines */
 :root {
   --fc-grid-line-light: rgba(0,0,0,0.07);
-    --conversation-panel-bg: #0f1012; /* slightly different from pure gray-900 */
+    --conversation-panel-bg: #ffffff; /* slightly different from pure gray-900 */
     --conversation-transcript-bg: rgba(31,32,35,0.7);
     --conversation-input-bg: rgba(18,19,21,0.9);
   --fc-grid-line-strong-light: rgba(0,0,0,0.12);
@@ -182,6 +182,12 @@ body {
   .conversation-transcript-bg {
     background: var(--conversation-transcript-bg);
     transition: background .35s ease;
+  }
+  .conversation-transcript-text {
+    color: #111827; /* gray-900 */
+  }
+  .dark .conversation-transcript-text {
+    color: #f3f4f6; /* gray-100 approximation for dark readability */
   }
   .conversation-input-bg {
     background: var(--conversation-input-bg);

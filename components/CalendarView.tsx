@@ -86,9 +86,9 @@ export default function CalendarView({
             'transition-colors',
           ];
           if (changeType) {
-            base.push('bg-gradient-subtle', 'text-black');
+            base.push('bg-gradient-super-subtle', 'text-black');
           } else {
-            base.push('bg-gradient-subtle', 'text-black');
+            base.push('bg-gradient-brand', 'text-black');
           }
           // Slight hover effect (FullCalendar keeps class names)
           base.push('hover:brightness-110');

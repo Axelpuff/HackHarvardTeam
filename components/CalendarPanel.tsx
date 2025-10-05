@@ -130,13 +130,8 @@ export function CalendarPanel({
               return (
                 <div
                   key={event.id}
-                  className="event-card p-3 rounded-lg flex items-stretch justify-between"
+                  className={`event-card p-3 rounded-lg flex items-start justify-between`}
                 >
-                  {/* Accent gradient strip */}
-                  <span
-                    aria-hidden="true"
-                    className="w-1.5 rounded-full bg-gradient-brand mr-3"
-                  ></span>
                   <div className="flex-1">
                     <div className="flex items-center space-x-3">
                       <div className="flex-shrink-0">
@@ -179,7 +174,7 @@ export function CalendarPanel({
                       </div>
                     </div>
                   </div>
-                  <div className="ml-3 flex flex-col items-end">
+                  <div className="ml-4 flex flex-col items-end">
                     {showDiff && changeType && (
                       <span
                         className={`px-2 py-1 rounded-full text-xs font-semibold ${getChangeTypeColor(changeType)}`}
