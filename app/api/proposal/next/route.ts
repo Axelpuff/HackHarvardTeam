@@ -6,6 +6,7 @@ import { createGeminiClient, MockGeminiClient } from '@/lib/gemini';
 import { createGoogleCalendarClient, MockGoogleCalendarClient } from '@/lib/google-calendar';
 import { PreferenceSetSchema, PreferenceSet } from '@/lib/models/proposal';
 import type { CalendarEvent } from '@/lib/models/calendarEvent';
+import { findTimeConflicts } from '@/lib/diff';
 
 // --- Minimal stateless heuristic ---
 // We treat the conversation as a sequence of user messages; client sends them each call.
@@ -137,6 +138,53 @@ export async function POST(req: NextRequest) {
       events,
       preferences: effectivePreferences,
     });
+
+    // Check for conflicts in the proposed changes
+    if (proposal.changes && proposal.changes.length > 0) {
+      // Create a test schedule with the proposed changes to check for conflicts
+      const testEvents = [...events];
+      
+      // Apply proposed changes to test for conflicts
+      for (const change of proposal.changes) {
+        if (change.type === 'add' && change.event) {
+          testEvents.push({
+            id: change.id,
+            title: change.event.title,
+            start: change.event.start,
+            end: change.event.end,
+            durationMinutes: change.event.durationMinutes,
+            source: 'proposed',
+            changeType: 'add',
+          });
+        } else if (change.type === 'remove' && change.targetEventId) {
+          const index = testEvents.findIndex(e => e.id === change.targetEventId);
+          if (index !== -1) testEvents.splice(index, 1);
+        } else if ((change.type === 'move' || change.type === 'adjust') && change.targetEventId && change.event) {
+          const index = testEvents.findIndex(e => e.id === change.targetEventId);
+          if (index !== -1) {
+            testEvents[index] = {
+              ...testEvents[index],
+              start: change.event.start,
+              end: change.event.end,
+              durationMinutes: change.event.durationMinutes,
+            };
+          }
+        }
+      }
+
+      // Check for conflicts in the test schedule
+      const conflicts = findTimeConflicts(testEvents);
+      
+      if (conflicts.length > 0) {
+        // Generate a conflict-aware clarifying question
+        const conflict = conflicts[0]; // Focus on the first conflict
+        const conflictQuestion = `I notice a scheduling conflict: "${conflict.event1.title}" (${new Date(conflict.event1.start).toLocaleTimeString()} - ${new Date(conflict.event1.end).toLocaleTimeString()}) overlaps with "${conflict.event2.title}" (${new Date(conflict.event2.start).toLocaleTimeString()} - ${new Date(conflict.event2.end).toLocaleTimeString()}) for ${conflict.overlapMinutes} minutes. How would you like me to resolve this conflict?`;
+        
+        return NextResponse.json(
+          ClarifyResponseSchema.parse({ status: 'clarify', question: conflictQuestion })
+        );
+      }
+    }
 
     // Pass-through response (client can validate with ProposalSchema)
     return NextResponse.json(

@@ -92,7 +92,7 @@ ${answeredQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n')}`
     : ''
 }
 
-Generate a single, specific clarifying question to better understand their scheduling needs. 
+Generate a single, specific clarifying question to better understand their scheduling needs.
 Focus on practical details like:
 - Preferred times of day
 - Priority activities
@@ -100,7 +100,10 @@ Focus on practical details like:
 - Goals (focus time, exercise, sleep, etc.)
 - Conflicts with existing events
 
-IMPORTANT: If there are obvious conflicts with existing events, address them directly in your question.
+CRITICAL: If there are obvious conflicts with existing events, address them directly in your question.
+Examples of conflict-aware questions:
+- "I notice you want to schedule a meeting at 6:30 AM, but you already have 'Call Delia' from 6:00-7:00 AM. Would you like me to reschedule the call or move the meeting to a different time?"
+- "You mentioned adding lunch at 1:00 PM, but 'Library' runs from 12:00-4:00 PM. Should I adjust the library time or find a different time for lunch?"
 
 Return only the question, no additional text.
 `;
@@ -172,6 +175,15 @@ Rules:
 - IMPORTANT: Only include changes for events that need to be modified, added, or removed
 - DO NOT include changes for existing events that should remain unchanged
 - The proposed schedule will start as a copy of the current schedule, with only your specified changes applied
+
+CRITICAL CONFLICT DETECTION:
+- Before adding any new event, check if it overlaps with existing events
+- If there's a time conflict, you MUST ask the user to clarify how to handle it
+- Examples of conflicts:
+  * Adding "Meeting at 6:30 AM" when "Call Delia" runs 6:00-7:00 AM
+  * Adding "Lunch at 1:00 PM" when "Library" runs 12:00-4:00 PM
+- If you detect a conflict, return a clarifying question instead of a proposal
+- Ask: "I notice [new event] would overlap with [existing event] from [time]. Would you like me to: 1) Reschedule [existing event], 2) Move [new event] to [suggested time], or 3) Remove [existing event]?"
 
 Return only valid JSON, no additional text.
 `;
