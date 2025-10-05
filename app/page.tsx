@@ -162,6 +162,15 @@ export default function HomePage() {
     [pendingInput, isRequesting, problemText, clarifications, speakText]
   );
 
+  // State for current calendar events
+  const [currentEvents, setCurrentEvents] = useState<CalendarEvent[]>([]);
+  const [isLoadingCurrent, setIsLoadingCurrent] = useState(false);
+  // State for proposed schedule changes (may include diff metadata later)
+  const [proposedEvents, setProposedEvents] = useState<CalendarEvent[]>([]);
+  const [isLoadingProposed, setIsLoadingProposed] = useState(false);
+  // TODO: Wire up fetching of current events when conversation starts or on mount.
+  // TODO: Populate proposedEvents with diff metadata (changeType, accepted) when proposals are generated.
+
   // Export transcript handler
   const handleExportTranscript = useCallback(async () => {
     if (isExporting) return;
@@ -223,15 +232,6 @@ export default function HomePage() {
       setIsExporting(false);
     }
   }, [isExporting, messages, proposedEvents]);
-
-  // State for current calendar events
-  const [currentEvents, setCurrentEvents] = useState<CalendarEvent[]>([]);
-  const [isLoadingCurrent, setIsLoadingCurrent] = useState(false);
-  // State for proposed schedule changes (may include diff metadata later)
-  const [proposedEvents, setProposedEvents] = useState<CalendarEvent[]>([]);
-  const [isLoadingProposed, setIsLoadingProposed] = useState(false);
-  // TODO: Wire up fetching of current events when conversation starts or on mount.
-  // TODO: Populate proposedEvents with diff metadata (changeType, accepted) when proposals are generated.
 
   // Minimal fetch of current events when conversation starts.
   useEffect(() => {
