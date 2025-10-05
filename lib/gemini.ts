@@ -4,7 +4,7 @@ import type { Proposal, ChangeItem, PreferenceSet } from './models/proposal';
 import { GoogleGenerativeAI, GenerativeModel, GenerateContentResult } from '@google/generative-ai';
 
 // Configuration defaults (can be overridden with env vars)
-const DEFAULT_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+const DEFAULT_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 1000;
 
