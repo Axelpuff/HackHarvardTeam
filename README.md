@@ -1,4 +1,4 @@
-# AI Schedule Counseling Assistant
+![Alt text](./public/clarity-logo-2.png)
 
 A conversational AI assistant that helps optimize your calendar schedule through natural dialogue. The system ingests your Google Calendar events, gathers clarifications about scheduling concerns, and proposes non-destructive schedule changes that you can selectively accept.
 
