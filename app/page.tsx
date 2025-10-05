@@ -30,6 +30,13 @@ export default function HomePage() {
   const [isRequesting, setIsRequesting] = useState(false);
   const [hasProposal, setHasProposal] = useState(false);
   const [lastProposal, setLastProposal] = useState<any | null>(null);
+  // New state for applying changes & feedback
+  const [isApplying, setIsApplying] = useState(false);
+  const [applyError, setApplyError] = useState<string | null>(null);
+  const [applySuccess, setApplySuccess] = useState<string | null>(null);
+  const [lastAppliedChangeIds, setLastAppliedChangeIds] = useState<
+    string[] | null
+  >(null); // for potential undo
   const [isExporting, setIsExporting] = useState(false);
   const transcriptRef = useRef<HTMLDivElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -41,6 +48,7 @@ export default function HomePage() {
     calendarAccessRevoked,
     calendarRevokedMessage,
     dismissRevoked,
+    refresh,
   } = useCalendarEvents();
 
   // Speak text using ElevenLabs TTS via server API
@@ -167,7 +175,7 @@ export default function HomePage() {
                   // Remove existing event
                   if (change.targetEventId) {
                     proposedSchedule = proposedSchedule.filter(
-                      event => event.id !== change.targetEventId
+                      (event) => event.id !== change.targetEventId
                     );
                   }
                   break;
@@ -177,7 +185,7 @@ export default function HomePage() {
                   // Modify existing event
                   if (change.targetEventId) {
                     const eventIndex = proposedSchedule.findIndex(
-                      event => event.id === change.targetEventId
+                      (event) => event.id === change.targetEventId
                     );
                     if (eventIndex !== -1) {
                       proposedSchedule[eventIndex] = {
@@ -216,7 +224,14 @@ export default function HomePage() {
         setIsRequesting(false);
       }
     },
-    [pendingInput, isRequesting, problemText, clarifications, speakText]
+    [
+      pendingInput,
+      isRequesting,
+      problemText,
+      clarifications,
+      speakText,
+      currentEvents,
+    ]
   );
 
   // calendar events are provided by useCalendarEvents()
@@ -287,6 +302,40 @@ export default function HomePage() {
       setIsExporting(false);
     }
   }, [isExporting, messages, proposedEvents]);
+
+  // Apply calendar changes handler
+  const handleApplyChanges = useCallback(async () => {
+    if (!lastProposal?.changes?.length || isApplying) return;
+    setIsApplying(true);
+    setApplyError(null);
+    setApplySuccess(null);
+    try {
+      const body = {
+        changes: lastProposal.changes, // send all for now (no selective acceptance UI yet)
+        onlyAccepted: false,
+      };
+      const res = await fetch('/api/calendar/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json.ok) {
+        throw new Error(json.message || `Failed (${res.status})`);
+      }
+      // Success path
+      setLastAppliedChangeIds(json.appliedChangeIds || []);
+      setApplySuccess(
+        `Applied ${json.appliedChangeIds?.length || 0} change(s)`
+      );
+      // Refresh events to reflect new state
+      refresh();
+    } catch (e: any) {
+      setApplyError(e.message || 'Failed to apply changes');
+    } finally {
+      setIsApplying(false);
+    }
+  }, [lastProposal, isApplying, refresh]);
 
   // useCalendarEvents performs the fetch on mount and handles revoked detection
 
@@ -659,13 +708,15 @@ export default function HomePage() {
               <button
                 className={`bg-gradient-brand text-white font-semibold px-6 py-2.5 rounded-lg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-brand-mint focus:ring-offset-2 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02] disabled:hover:scale-100 ${isDarkMode ? 'focus:ring-offset-gray-950' : 'focus:ring-offset-white'}`}
                 aria-label="Apply selected schedule changes to your Google Calendar"
-                disabled
+                disabled={!lastProposal?.changes?.length || isApplying}
+                onClick={handleApplyChanges}
               >
-                Apply Changes
+                {isApplying ? 'Applying...' : 'Apply Changes'}
               </button>
               <button
                 className={`font-semibold px-6 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-teal focus:ring-offset-2 transition-all duration-200 transform hover:scale-[1.02] ${isDarkMode ? 'bg-brand-teal/50 text-brand-blue hover:bg-brand-teal/70 focus:ring-offset-gray-950' : 'bg-gray-100 text-brand-teal hover:bg-gray-200 focus:ring-offset-white'}`}
                 aria-label="Undo the last applied changes to your calendar"
+                disabled={!lastAppliedChangeIds || isApplying}
               >
                 Undo Last Apply
               </button>
@@ -678,6 +729,22 @@ export default function HomePage() {
                 {isExporting ? 'Exporting...' : 'Export Transcript'}
               </button>
             </div>
+            {applyError && (
+              <div
+                className="mt-4 text-center text-sm text-red-500"
+                role="alert"
+              >
+                {applyError}
+              </div>
+            )}
+            {applySuccess && (
+              <div
+                className="mt-4 text-center text-sm text-green-600"
+                role="status"
+              >
+                {applySuccess}
+              </div>
+            )}
           </section>
         )}
       </main>
