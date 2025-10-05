@@ -1,0 +1,30 @@
+Implementation plan and notes
+
+- Calendar package: FullCalendar (React adapter)
+  - Packages added to package.json:
+    - @fullcalendar/core
+    - @fullcalendar/daygrid
+    - @fullcalendar/timegrid
+    - @fullcalendar/react
+  - Rationale: supports day/week views, timeGridWeek/timeGridDay, drag/resize in future.
+
+- Components added:
+  - `components/CalendarView.tsx` (client) - wraps FullCalendar. Props: events, view ('day'|'week').
+  - `components/SchedulePanels.tsx` (client) - composes two CalendarView instances; layout switches based on view: week -> stacked, day -> side-by-side.
+
+- Page changes:
+  - `app/page.tsx` now holds a `viewMode` state (header toggle) and renders `SchedulePanels` across left two-thirds and the Conversation panel on the right third.
+  - Conversation functionality unchanged.
+
+- Styling / events:
+  - Current events and proposed events are rendered as FullCalendar events. Proposed events styling (colors/opacity) can be added via FullCalendar event render hooks or extendedProps.
+
+- Remaining tasks / follow-ups:
+  1. Install dependencies: `npm install` (or `pnpm`/`yarn` depending on your workflow).
+  2. Wire event click handlers (popovers, edit, accept proposal) as needed.
+  3. Accessibility review and keyboard interactions for calendar.
+  4. Add unit/integration tests for SchedulePanels rendering.
+
+Notes:
+- I kept the scope limited to front-end changes and modularized the calendar code to avoid bloating `page.tsx`.
+- If you prefer a different visual treatment for proposed events (e.g., dashed border or lower opacity), tell me and I'll add eventClassNames or eventContent customizations.

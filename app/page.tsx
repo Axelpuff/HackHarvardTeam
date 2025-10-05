@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { signIn, signOut, useSession } from 'next-auth/react';
-import { CalendarPanel } from '@/components/CalendarPanel';
+import SchedulePanels from '@/components/SchedulePanels';
 import { type CalendarEvent } from '@/lib/models/calendarEvent';
 import { VoiceInput } from '@/components/VoiceInput';
 
@@ -166,16 +166,17 @@ export default function HomePage() {
   // State for proposed schedule changes (may include diff metadata later)
   const [proposedEvents, setProposedEvents] = useState<CalendarEvent[]>([]);
   const [isLoadingProposed, setIsLoadingProposed] = useState(false);
+  const [viewMode, setViewMode] = useState<'day' | 'week'>('day');
   // TODO: Wire up fetching of current events when conversation starts or on mount.
   // TODO: Populate proposedEvents with diff metadata (changeType, accepted) when proposals are generated.
 
-  // Minimal fetch of current events when conversation starts.
+  // Fetch current events for the week on mount so the UI has the week's
+  // events available by default (not only the current day).
   useEffect(() => {
-    if (!isConversationActive) return; // Only load after conversation begins
     let cancelled = false;
     setIsLoadingCurrent(true);
 
-    fetch('/api/calendar/events?scope=day')
+    fetch('/api/calendar/events?scope=week')
       .then(async (res) => {
         if (!res.ok) {
           throw new Error(`Failed to load events (${res.status})`);
@@ -203,7 +204,7 @@ export default function HomePage() {
     return () => {
       cancelled = true;
     };
-  }, [isConversationActive]);
+  }, []);
 
   // Voice input is now provided by the shared VoiceInput component
 
@@ -303,6 +304,20 @@ export default function HomePage() {
               role="navigation"
               aria-label="User navigation"
             >
+              <div className="flex items-center space-x-2 mr-4">
+                <label className="text-sm text-gray-400 mr-2">Week</label>
+                <button
+                  onClick={() =>
+                    setViewMode(viewMode === 'week' ? 'day' : 'week')
+                  }
+                  className="px-3 py-1 rounded-lg bg-gray-100 dark:bg-gray-800 text-sm"
+                  aria-pressed={viewMode === 'week'}
+                  aria-label="Toggle week view"
+                  title="Toggle week/day view"
+                >
+                  {viewMode === 'week' ? 'Week' : 'Day'}
+                </button>
+              </div>
               <button
                 onClick={() => setIsDarkMode(!isDarkMode)}
                 className={`p-2 rounded-lg transition-all duration-200 ${isDarkMode ? 'bg-brand-dark/50 text-brand-mint hover:bg-brand-dark/70' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
@@ -355,52 +370,46 @@ export default function HomePage() {
 
       {/* Main Content */}
       <main
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10"
+        className="w-full px-4 sm:px-6 lg:px-8 py-8 relative z-10 lg:pr-[33vw] h-full"
         role="main"
       >
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Calendar Panel - Current Events (uses shared component) */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-[calc(100vh-5rem)]">
+          {/* Schedule Panels (left two-thirds) */}
           <section
-            className="lg:col-span-1"
-            aria-labelledby="current-schedule-heading"
+            className="lg:col-span-2 h-full lg:fixed lg:top-20 lg:left-0 lg:right-[33vw] lg:h-[calc(100vh-5rem)]"
+            aria-labelledby="schedule-heading"
           >
-            <div
-              aria-hidden="true"
-              className="sr-only"
-              id="current-schedule-heading"
-            >
-              Current Schedule
+            <div aria-hidden="true" className="sr-only" id="schedule-heading">
+              Current and Proposed Schedules
             </div>
-            <div data-testid="calendar-current">
-              <CalendarPanel
-                title="Current Schedule"
-                events={currentEvents}
-                isLoading={isLoadingCurrent}
-              />
-            </div>
+            <SchedulePanels
+              currentEvents={currentEvents}
+              proposedEvents={proposedEvents}
+              view={viewMode}
+            />
           </section>
 
-          {/* Conversation Panel */}
+          {/* Conversation Panel (right third) */}
           <section
             className="lg:col-span-1"
             aria-labelledby="conversation-heading"
           >
             <div
-              className="bg-white rounded-lg shadow-sm border h-96 flex flex-col"
+              className={`bg-white dark:bg-gray-900 rounded-lg shadow-sm border h-96 flex flex-col lg:rounded-none lg:shadow-none lg:fixed lg:top-20 lg:right-0 lg:w-1/3 lg:h-[calc(100vh-5rem)] lg:border-l lg:border-t-0 lg:border-r-0 lg:border-b-0`}
               data-testid="conversation-panel"
             >
-              <div className="p-4 border-b">
+              <div className="p-4 border-b bg-gradient-to-r from-white/0 to-white/0 dark:from-gray-900/0 dark:to-gray-900/0">
                 <h2
                   id="conversation-heading"
-                  className="text-lg font-medium text-gray-900"
+                  className="text-lg font-semibold text-gray-900 dark:text-gray-100"
                 >
                   Conversation
                 </h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  Ask about your schedule and get suggested changes.
+                </p>
               </div>
-              <div
-                className="p-4 flex flex-col overflow-hidden"
-                style={{ height: 'calc(24rem - 57px)' }}
-              >
+              <div className="p-4 flex flex-col overflow-hidden h-full">
                 {!isConversationActive ? (
                   <div className="flex-1 flex items-center justify-center">
                     <div className="text-center">
@@ -462,7 +471,7 @@ export default function HomePage() {
                     </div>
                     <div
                       ref={transcriptRef}
-                      className="flex-1 overflow-y-auto mb-4 p-2 bg-gray-50 rounded text-sm"
+                      className="flex-1 overflow-y-auto mb-4 p-4 bg-white dark:bg-gray-900 rounded-lg lg:rounded-none text-sm space-y-3"
                       role="log"
                       aria-label="Conversation transcript"
                       aria-live="polite"
@@ -470,10 +479,18 @@ export default function HomePage() {
                     >
                       {messages.map((m, idx) => (
                         <div key={idx} className="mb-2" role="listitem">
-                          <span className="font-semibold text-gray-900 capitalize">
-                            {m.role}:
-                          </span>{' '}
-                          <span className="text-gray-900">{m.text}</span>
+                          <div
+                            className={`inline-block max-w-[85%] p-3 rounded-lg ${
+                              m.role === 'user'
+                                ? 'bg-gradient-to-r from-brand-mint/20 to-brand-mint/10 text-gray-900 self-end'
+                                : 'bg-gray-50 dark:bg-gray-800 text-gray-900'
+                            } ${m.role === 'assistant' ? 'ml-0' : 'ml-auto'}`}
+                          >
+                            <div className="text-xs font-semibold text-gray-600 capitalize mb-1">
+                              {m.role}
+                            </div>
+                            <div className="whitespace-pre-wrap">{m.text}</div>
+                          </div>
                         </div>
                       ))}
                       {isRequesting && (
@@ -484,7 +501,7 @@ export default function HomePage() {
                     </div>
                     {conversationMode === 'text' && (
                       <form
-                        className="flex space-x-2"
+                        className="flex space-x-2 mt-auto"
                         onSubmit={(e) => {
                           e.preventDefault();
                           handleSend();
@@ -497,7 +514,7 @@ export default function HomePage() {
                           id="message-input"
                           type="text"
                           placeholder="Type your message or use voice..."
-                          className="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="flex-1 border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand-mint bg-gray-50 dark:bg-gray-800"
                           aria-describedby="message-help"
                           value={pendingInput}
                           disabled={isRequesting}
@@ -509,7 +526,7 @@ export default function HomePage() {
                         </span>
                         <button
                           type="submit"
-                          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                          className="bg-gradient-brand text-white px-5 py-2.5 rounded-lg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-brand-mint focus:ring-offset-2 transition-all duration-150"
                           aria-label="Send message to AI assistant"
                           disabled={isRequesting || !pendingInput.trim()}
                         >
@@ -539,23 +556,7 @@ export default function HomePage() {
             </div>
           </section>
 
-          {/* Proposal Panel - Proposed Changes (uses shared component) */}
-          <section
-            className="lg:col-span-1"
-            aria-labelledby="proposals-heading"
-          >
-            <div aria-hidden="true" className="sr-only" id="proposals-heading">
-              Proposed Changes
-            </div>
-            <div data-testid="calendar-proposed">
-              <CalendarPanel
-                title="Proposed Changes"
-                events={proposedEvents}
-                isLoading={isLoadingProposed}
-                showDiff
-              />
-            </div>
-          </section>
+          {/* (Proposals panel removed — now part of SchedulePanels) */}
         </div>
 
         {/* Action Buttons */}

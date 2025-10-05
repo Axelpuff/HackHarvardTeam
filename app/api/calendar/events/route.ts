@@ -66,12 +66,16 @@ export async function GET(request: NextRequest) {
       timeMin = startOfDay.toISOString();
       timeMax = endOfDay.toISOString();
     } else {
-      // Current week (7 days from today)
-      const startOfWeek = new Date(now);
-      const endOfWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      // Windowed week: return events from a week ago to a week from now.
+      // Make this easily configurable via WINDOW_DAYS (days before/after now).
+      const WINDOW_DAYS = 7;
+      const start = new Date(now.getTime() - WINDOW_DAYS * 24 * 60 * 60 * 1000);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(now.getTime() + WINDOW_DAYS * 24 * 60 * 60 * 1000);
+      end.setHours(23, 59, 59, 999);
 
-      timeMin = startOfWeek.toISOString();
-      timeMax = endOfWeek.toISOString();
+      timeMin = start.toISOString();
+      timeMax = end.toISOString();
     }
 
     // Create Google Calendar client (use mock in test environment)
@@ -81,14 +85,14 @@ export async function GET(request: NextRequest) {
       if (!session?.accessToken) {
         const response = ErrorResponseSchema.parse({
           ok: false,
-            code: 'UNAUTHORIZED',
-            message: 'User not authenticated',
+          code: 'UNAUTHORIZED',
+          message: 'User not authenticated',
         });
         return NextResponse.json(response, { status: 401 });
       }
       accessToken = session.accessToken as string;
     }
-    
+
     const calendarClient =
       process.env.VITEST === 'true'
         ? (() => {
