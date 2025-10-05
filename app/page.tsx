@@ -94,7 +94,7 @@ export default function HomePage() {
           body: JSON.stringify({
             problemText: nextProblem,
             clarifications: effectiveClarifications,
-            scope: 'week',
+            scope: 'day', // Use day scope to match current events
           }),
         });
 

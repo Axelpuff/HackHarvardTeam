@@ -4,7 +4,7 @@ import type { Proposal, ChangeItem, PreferenceSet } from './models/proposal';
 import { GoogleGenerativeAI, GenerativeModel, GenerateContentResult } from '@google/generative-ai';
 
 // Configuration defaults (can be overridden with env vars)
-const DEFAULT_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+const DEFAULT_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 1000;
 
@@ -68,6 +68,13 @@ export class GeminiClient {
     answeredQuestions: string[] = [],
     currentEvents: CalendarEvent[] = []
   ): Promise<string> {
+    // Debug logging
+    console.log('generateClarifyingQuestion called with:', {
+      problemText,
+      answeredQuestions,
+      currentEvents: currentEvents.map(e => ({ title: e.title, start: e.start, end: e.end }))
+    });
+
     const prompt = `
 You are an AI scheduling assistant. A user has described a scheduling problem: "${problemText}"
 
@@ -92,6 +99,8 @@ Focus on practical details like:
 - Constraints or commitments
 - Goals (focus time, exercise, sleep, etc.)
 - Conflicts with existing events
+
+IMPORTANT: If there are obvious conflicts with existing events, address them directly in your question.
 
 Return only the question, no additional text.
 `;
