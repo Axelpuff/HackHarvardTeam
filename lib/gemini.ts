@@ -1,25 +1,10 @@
 import { z } from 'zod';
 import type { CalendarEvent } from './models/calendarEvent';
 import type { Proposal, ChangeItem, PreferenceSet } from './models/proposal';
+import { GoogleGenerativeAI, GenerativeModel, GenerateContentResult } from '@google/generative-ai';
 
-// Gemini API response schema
-const GeminiResponseSchema = z.object({
-  candidates: z.array(
-    z.object({
-      content: z.object({
-        parts: z.array(
-          z.object({
-            text: z.string(),
-          })
-        ),
-      }),
-    })
-  ),
-});
-
-// Configuration
-const GEMINI_API_URL =
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
+// Configuration defaults (can be overridden with env vars)
+const DEFAULT_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 1000;
 
@@ -31,13 +16,17 @@ export interface GeminiConfig {
 
 export class GeminiClient {
   private config: Required<GeminiConfig>;
+  private model: GenerativeModel;
 
-  constructor(config: GeminiConfig) {
+  constructor(config: GeminiConfig & { modelName?: string }) {
     this.config = {
       apiKey: config.apiKey,
       maxRetries: config.maxRetries || MAX_RETRIES,
       retryDelay: config.retryDelay || RETRY_DELAY_MS,
     };
+    const genAI = new GoogleGenerativeAI(this.config.apiKey);
+    const modelName = (config as any).modelName || DEFAULT_MODEL;
+    this.model = genAI.getGenerativeModel({ model: modelName });
   }
 
   private async delay(ms: number): Promise<void> {
@@ -46,51 +35,28 @@ export class GeminiClient {
 
   private async makeRequest(prompt: string, attempt = 1): Promise<string> {
     try {
-      const response = await fetch(
-        `${GEMINI_API_URL}?key=${this.config.apiKey}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
+      const result: GenerateContentResult = await this.model.generateContent({
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: prompt }],
           },
-          body: JSON.stringify({
-            contents: [
-              {
-                parts: [
-                  {
-                    text: prompt,
-                  },
-                ],
-              },
-            ],
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(
-          `Gemini API error: ${response.status} ${response.statusText}`
-        );
-      }
-
-      const data = await response.json();
-      const parsed = GeminiResponseSchema.parse(data);
-
-      if (!parsed.candidates[0]?.content?.parts[0]?.text) {
+        ],
+      });
+      const response = result.response;
+      const text = response.text();
+      if (!text) {
         throw new Error('No text response from Gemini API');
       }
-
-      return parsed.candidates[0].content.parts[0].text;
-    } catch (error) {
+      return text;
+    } catch (error: any) {
       if (attempt <= this.config.maxRetries) {
-        console.warn(
-          `Gemini request attempt ${attempt} failed, retrying...`,
-          error
-        );
+        console.warn(`Gemini request attempt ${attempt} failed, retrying...`, error?.message || error);
         await this.delay(this.config.retryDelay * attempt);
         return this.makeRequest(prompt, attempt + 1);
       }
-      throw error;
+      // Enrich error
+      throw new Error(`Gemini generateContent failed after ${attempt - 1} retries: ${error?.message || error}`);
     }
   }
 
@@ -238,12 +204,12 @@ Return only the explanation, no additional text.
 }
 
 // Export convenience functions for common operations
-export const createGeminiClient = (apiKey?: string): GeminiClient => {
+export const createGeminiClient = (apiKey?: string, modelName?: string): GeminiClient => {
   const key = apiKey || process.env.GEMINI_API_KEY;
   if (!key) {
     throw new Error('Gemini API key is required');
   }
-  return new GeminiClient({ apiKey: key });
+  return new GeminiClient({ apiKey: key, modelName });
 };
 
 // Mock client for testing
