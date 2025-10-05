@@ -143,6 +143,15 @@ export default function HomePage() {
     };
   }, [isConversationActive]);
 
+  // Auto-scroll transcript when messages or loading state change
+  // NOTE: This must be declared BEFORE any conditional returns to preserve hook order
+  useEffect(() => {
+    const el = transcriptRef.current;
+    if (el) {
+      el.scrollTop = el.scrollHeight;
+    }
+  }, [messages, isRequesting]);
+
   if (status === 'loading') {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -181,14 +190,6 @@ export default function HomePage() {
       </div>
     );
   }
-
-  // Auto-scroll transcript when messages or loading state change
-  useEffect(() => {
-    const el = transcriptRef.current;
-    if (el) {
-      el.scrollTop = el.scrollHeight;
-    }
-  }, [messages, isRequesting]);
 
   return (
     <div className="min-h-screen bg-gray-50">
