@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { signIn, signOut, useSession } from 'next-auth/react';
 import SchedulePanels from '@/components/SchedulePanels';
 import { type CalendarEvent } from '@/lib/models/calendarEvent';
 import { VoiceInput } from '@/components/VoiceInput';
+import RevokedBanner from '@/components/RevokedBanner';
+import { useCalendarEvents } from '@/hooks/useCalendarEvents';
 
 export default function HomePage() {
   const { data: session, status } = useSession();
@@ -31,6 +33,15 @@ export default function HomePage() {
   const [isExporting, setIsExporting] = useState(false);
   const transcriptRef = useRef<HTMLDivElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Calendar hook encapsulates fetching + revoked detection
+  const {
+    currentEvents,
+    isLoadingCurrent,
+    calendarAccessRevoked,
+    calendarRevokedMessage,
+    dismissRevoked,
+  } = useCalendarEvents();
 
   // Speak text using ElevenLabs TTS via server API
   const speakText = useCallback(async (text: string) => {
@@ -162,9 +173,7 @@ export default function HomePage() {
     [pendingInput, isRequesting, problemText, clarifications, speakText]
   );
 
-  // State for current calendar events
-  const [currentEvents, setCurrentEvents] = useState<CalendarEvent[]>([]);
-  const [isLoadingCurrent, setIsLoadingCurrent] = useState(false);
+  // calendar events are provided by useCalendarEvents()
   // State for proposed schedule changes (may include diff metadata later)
   const [proposedEvents, setProposedEvents] = useState<CalendarEvent[]>([]);
   const [isLoadingProposed, setIsLoadingProposed] = useState(false);
@@ -233,41 +242,7 @@ export default function HomePage() {
     }
   }, [isExporting, messages, proposedEvents]);
 
-  // Fetch current events for the week on mount so the UI has the week's
-  // events available by default (not only the current day).
-  useEffect(() => {
-    let cancelled = false;
-    setIsLoadingCurrent(true);
-
-    fetch('/api/calendar/events?scope=week')
-      .then(async (res) => {
-        if (!res.ok) {
-          throw new Error(`Failed to load events (${res.status})`);
-        }
-        const data = await res.json();
-        if (cancelled) return;
-        setCurrentEvents(
-          (data.events || []).map((e: any) => ({
-            ...e,
-            source: 'current' as const,
-            changeType: 'none' as const,
-          }))
-        );
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          console.error('Calendar fetch error:', err);
-          setCurrentEvents([]);
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoadingCurrent(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  // useCalendarEvents performs the fetch on mount and handles revoked detection
 
   // Voice input is now provided by the shared VoiceInput component
 
@@ -339,6 +314,8 @@ export default function HomePage() {
       </div>
     );
   }
+
+  // Render the extracted revoked banner component
 
   return (
     <div
@@ -430,6 +407,13 @@ export default function HomePage() {
           </div>
         </div>
       </header>
+
+      <RevokedBanner
+        open={calendarAccessRevoked}
+        message={calendarRevokedMessage}
+        onReconnect={() => signIn('google')}
+        onDismiss={dismissRevoked}
+      />
 
       {/* Main Content */}
       <main
