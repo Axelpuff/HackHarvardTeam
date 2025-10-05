@@ -123,7 +123,8 @@ export async function POST(req: NextRequest) {
     if (!shouldPropose) {
       const question = await gemini.generateClarifyingQuestion(
         problemText,
-        clarifications
+        clarifications,
+        events
       );
       return NextResponse.json(
         ClarifyResponseSchema.parse({ status: 'clarify', question })

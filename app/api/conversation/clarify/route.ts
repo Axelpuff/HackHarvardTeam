@@ -6,6 +6,15 @@ import { createGeminiClient, MockGeminiClient } from '@/lib/gemini';
 const ClarifyRequestSchema = z.object({
   problemText: z.string().min(1, 'Problem text is required'),
   answeredQuestions: z.array(z.string()).default([]),
+  currentEvents: z.array(z.object({
+    id: z.string(),
+    title: z.string(),
+    start: z.string(),
+    end: z.string(),
+    durationMinutes: z.number(),
+    source: z.string(),
+    changeType: z.string(),
+  })).optional().default([]),
 });
 
 // Response schema
@@ -24,7 +33,7 @@ export async function POST(request: NextRequest) {
   try {
     // Parse and validate request body
     const body = await request.json();
-    const { problemText, answeredQuestions } = ClarifyRequestSchema.parse(body);
+    const { problemText, answeredQuestions, currentEvents } = ClarifyRequestSchema.parse(body);
 
     // Create Gemini client (use mock in test environment)
     const geminiClient =
@@ -35,7 +44,8 @@ export async function POST(request: NextRequest) {
     // Generate clarifying question
     const question = await geminiClient.generateClarifyingQuestion(
       problemText,
-      answeredQuestions
+      answeredQuestions,
+      currentEvents
     );
 
     // Validate and return response

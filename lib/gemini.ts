@@ -4,7 +4,7 @@ import type { Proposal, ChangeItem, PreferenceSet } from './models/proposal';
 import { GoogleGenerativeAI, GenerativeModel, GenerateContentResult } from '@google/generative-ai';
 
 // Configuration defaults (can be overridden with env vars)
-const DEFAULT_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+const DEFAULT_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 1000;
 
@@ -65,10 +65,25 @@ export class GeminiClient {
    */
   async generateClarifyingQuestion(
     problemText: string,
-    answeredQuestions: string[] = []
+    answeredQuestions: string[] = [],
+    currentEvents: CalendarEvent[] = []
   ): Promise<string> {
+    // Debug logging
+    console.log('generateClarifyingQuestion called with:', {
+      problemText,
+      answeredQuestions,
+      currentEvents: currentEvents.map(e => ({ title: e.title, start: e.start, end: e.end }))
+    });
+
     const prompt = `
 You are an AI scheduling assistant. A user has described a scheduling problem: "${problemText}"
+
+${
+  currentEvents.length > 0
+    ? `Current schedule:
+${currentEvents.map((e) => `- "${e.title}" from ${e.start} to ${e.end} (${e.durationMinutes} min)`).join('\n')}`
+    : ''
+}
 
 ${
   answeredQuestions.length > 0
@@ -83,6 +98,9 @@ Focus on practical details like:
 - Priority activities
 - Constraints or commitments
 - Goals (focus time, exercise, sleep, etc.)
+- Conflicts with existing events
+
+IMPORTANT: If there are obvious conflicts with existing events, address them directly in your question.
 
 Return only the question, no additional text.
 `;
@@ -220,10 +238,14 @@ export class MockGeminiClient extends GeminiClient {
 
   async generateClarifyingQuestion(
     problemText: string,
-    answeredQuestions: string[] = []
+    answeredQuestions: string[] = [],
+    currentEvents: CalendarEvent[] = []
   ): Promise<string> {
     // Return mock clarifying questions based on input
     if (answeredQuestions.length === 0) {
+      if (currentEvents.length > 0) {
+        return 'I can see you have several events scheduled. What specific time slots feel most problematic for your goals?';
+      }
       return 'What specific aspects of your schedule feel most problematic?';
     }
     return 'What time of day do you prefer for focused work?';
