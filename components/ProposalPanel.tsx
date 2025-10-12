@@ -70,7 +70,9 @@ export function ProposalPanel({
   };
 
   const getSleepAssessmentColor = (belowTarget: boolean) => {
-    return belowTarget ? 'text-red-600 bg-red-50' : 'text-green-600 bg-green-50';
+    return belowTarget
+      ? 'text-red-600 bg-red-50'
+      : 'text-green-600 bg-green-50';
   };
 
   const acceptedCount =
@@ -204,7 +206,7 @@ export function ProposalPanel({
                       </button>
                     </div>
                   </div>
-                  
+
                   <div className="text-xs text-gray-600 dark:text-gray-300 mb-2">
                     {formatTime(change.event.start)} -{' '}
                     {formatTime(change.event.end)} (

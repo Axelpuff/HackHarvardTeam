@@ -6,7 +6,8 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
   title: 'AI Schedule Counseling Assistant',
-  description: 'Conversational scheduling assistant with Google Calendar integration',
+  description:
+    'Conversational scheduling assistant with Google Calendar integration',
 };
 
 export default function RootLayout({

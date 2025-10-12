@@ -6,7 +6,9 @@ import { VoiceSettings } from '@/components/VoiceSettings';
 
 export default function TTSDemoPage() {
   const [selectedVoice, setSelectedVoice] = useState<string>('');
-  const [testText, setTestText] = useState('Hello! This is a test of the ElevenLabs text-to-speech integration. The AI assistant can now speak responses aloud using high-quality voice synthesis.');
+  const [testText, setTestText] = useState(
+    'Hello! This is a test of the ElevenLabs text-to-speech integration. The AI assistant can now speak responses aloud using high-quality voice synthesis.'
+  );
 
   const handleVoiceChange = (voiceId: string) => {
     setSelectedVoice(voiceId);
@@ -19,20 +21,20 @@ export default function TTSDemoPage() {
           <h1 className="text-2xl font-bold text-gray-900 mb-6">
             ElevenLabs TTS Integration Demo
           </h1>
-          
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Voice Settings */}
             <div className="bg-gray-50 rounded-lg">
-              <VoiceSettings 
-                onVoiceChange={handleVoiceChange}
-                className=""
-              />
+              <VoiceSettings onVoiceChange={handleVoiceChange} className="" />
             </div>
 
             {/* Test Area */}
             <div className="space-y-4">
               <div>
-                <label htmlFor="test-text" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="test-text"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   Test Text
                 </label>
                 <textarea
@@ -77,7 +79,7 @@ export default function TTSDemoPage() {
             </h3>
             <div className="bg-gray-50 rounded-lg p-4">
               <pre className="text-sm text-gray-800 overflow-x-auto">
-{`// Import the TTS components
+                {`// Import the TTS components
 import { TTSButton } from '@/components/TTSButton';
 import { VoiceSettings } from '@/components/VoiceSettings';
 

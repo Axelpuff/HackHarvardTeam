@@ -1,7 +1,11 @@
 import { z } from 'zod';
 import type { CalendarEvent } from './models/calendarEvent';
 import type { Proposal, ChangeItem, PreferenceSet } from './models/proposal';
-import { GoogleGenerativeAI, GenerativeModel, GenerateContentResult } from '@google/generative-ai';
+import {
+  GoogleGenerativeAI,
+  GenerativeModel,
+  GenerateContentResult,
+} from '@google/generative-ai';
 
 // Configuration defaults (can be overridden with env vars)
 const DEFAULT_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
@@ -51,12 +55,17 @@ export class GeminiClient {
       return text;
     } catch (error: any) {
       if (attempt <= this.config.maxRetries) {
-        console.warn(`Gemini request attempt ${attempt} failed, retrying...`, error?.message || error);
+        console.warn(
+          `Gemini request attempt ${attempt} failed, retrying...`,
+          error?.message || error
+        );
         await this.delay(this.config.retryDelay * attempt);
         return this.makeRequest(prompt, attempt + 1);
       }
       // Enrich error
-      throw new Error(`Gemini generateContent failed after ${attempt - 1} retries: ${error?.message || error}`);
+      throw new Error(
+        `Gemini generateContent failed after ${attempt - 1} retries: ${error?.message || error}`
+      );
     }
   }
 
@@ -72,7 +81,11 @@ export class GeminiClient {
     console.log('generateClarifyingQuestion called with:', {
       problemText,
       answeredQuestions,
-      currentEvents: currentEvents.map(e => ({ title: e.title, start: e.start, end: e.end }))
+      currentEvents: currentEvents.map((e) => ({
+        title: e.title,
+        start: e.start,
+        end: e.end,
+      })),
     });
 
     const prompt = `
@@ -237,7 +250,10 @@ Return only the explanation, no additional text.
 }
 
 // Export convenience functions for common operations
-export const createGeminiClient = (apiKey?: string, modelName?: string): GeminiClient => {
+export const createGeminiClient = (
+  apiKey?: string,
+  modelName?: string
+): GeminiClient => {
   const key = apiKey || process.env.GEMINI_API_KEY;
   if (!key) {
     throw new Error('Gemini API key is required');

@@ -17,7 +17,9 @@ declare module '@google/generative-ai' {
     contents: Content[];
   }
   export interface GenerativeModel {
-    generateContent(req: GenerateContentRequest): Promise<GenerateContentResult>;
+    generateContent(
+      req: GenerateContentRequest
+    ): Promise<GenerateContentResult>;
   }
   export class GoogleGenerativeAI {
     constructor(apiKey: string);

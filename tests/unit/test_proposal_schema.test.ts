@@ -257,11 +257,13 @@ describe('Proposal Schema Validation', () => {
               end: '2025-10-04T10:00:00.000Z',
               durationMinutes: 60,
             },
-            rationale: 'This meeting provides significant value by aligning team objectives and ensuring project success through collaborative planning.',
+            rationale:
+              'This meeting provides significant value by aligning team objectives and ensuring project success through collaborative planning.',
             accepted: 'pending' as const,
           },
         ],
-        summary: 'Well-structured proposal with clear improvements to daily schedule',
+        summary:
+          'Well-structured proposal with clear improvements to daily schedule',
         sleepAssessment: {
           estimatedSleepHours: 7.5,
           belowTarget: false,
@@ -313,8 +315,9 @@ describe('Proposal Schema Validation', () => {
     });
 
     it('should return null for text without valid JSON', () => {
-      const textWithoutJson = 'This is just plain text without any JSON proposal.';
-      
+      const textWithoutJson =
+        'This is just plain text without any JSON proposal.';
+
       const result = extractProposalFromText(textWithoutJson);
       expect(result).toBeNull();
     });

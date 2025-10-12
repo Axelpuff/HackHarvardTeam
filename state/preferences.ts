@@ -1,5 +1,9 @@
 import { z } from 'zod';
-import { PreferenceSetSchema, PreferenceSet, createDefaultPreferences } from '@/lib/models/proposal';
+import {
+  PreferenceSetSchema,
+  PreferenceSet,
+  createDefaultPreferences,
+} from '@/lib/models/proposal';
 
 const PREFERENCES_KEY = 'schedule-assistant-preferences';
 
@@ -25,7 +29,10 @@ export class PreferencesManager {
       const parsed = JSON.parse(stored);
       return PreferenceSetSchema.parse(parsed);
     } catch (error) {
-      console.warn('Failed to load preferences from localStorage, using defaults:', error);
+      console.warn(
+        'Failed to load preferences from localStorage, using defaults:',
+        error
+      );
       return createDefaultPreferences();
     }
   }

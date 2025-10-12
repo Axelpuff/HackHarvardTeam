@@ -2,61 +2,74 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { createGoogleCalendarClient, MockGoogleCalendarClient } from '@/lib/google-calendar';
+import {
+  createGoogleCalendarClient,
+  MockGoogleCalendarClient,
+} from '@/lib/google-calendar';
 import type { CalendarEvent } from '@/lib/models/calendarEvent';
 
 // Request schema
 const ExportRequestSchema = z.object({
-  conversation: z.array(z.object({
-    role: z.enum(['user', 'assistant']),
-    text: z.string(),
-    timestamp: z.string().optional(),
-  })),
-  proposedEvents: z.array(z.object({
-    id: z.string(),
-    title: z.string(),
-    start: z.string(),
-    end: z.string(),
-    durationMinutes: z.number(),
-    changeType: z.string(),
-    rationale: z.string().optional(),
-  })).optional().default([]),
+  conversation: z.array(
+    z.object({
+      role: z.enum(['user', 'assistant']),
+      text: z.string(),
+      timestamp: z.string().optional(),
+    })
+  ),
+  proposedEvents: z
+    .array(
+      z.object({
+        id: z.string(),
+        title: z.string(),
+        start: z.string(),
+        end: z.string(),
+        durationMinutes: z.number(),
+        changeType: z.string(),
+        rationale: z.string().optional(),
+      })
+    )
+    .optional()
+    .default([]),
   scope: z.enum(['day', 'week']).default('week'),
 });
 
 // Helper function to format CSV
 function formatCSV(data: any[]): string {
   if (data.length === 0) return '';
-  
+
   const headers = Object.keys(data[0]);
   const csvHeaders = headers.join(',');
-  
-  const csvRows = data.map(row => 
-    headers.map(header => {
-      const value = row[header];
-      // Escape quotes and wrap in quotes if contains comma, newline, or quote
-      if (typeof value === 'string' && (value.includes(',') || value.includes('\n') || value.includes('"'))) {
-        return `"${value.replace(/"/g, '""')}"`;
-      }
-      return value;
-    }).join(',')
+
+  const csvRows = data.map((row) =>
+    headers
+      .map((header) => {
+        const value = row[header];
+        // Escape quotes and wrap in quotes if contains comma, newline, or quote
+        if (
+          typeof value === 'string' &&
+          (value.includes(',') || value.includes('\n') || value.includes('"'))
+        ) {
+          return `"${value.replace(/"/g, '""')}"`;
+        }
+        return value;
+      })
+      .join(',')
   );
-  
+
   return [csvHeaders, ...csvRows].join('\n');
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { conversation, proposedEvents, scope } = ExportRequestSchema.parse(body);
+    const { conversation, proposedEvents, scope } =
+      ExportRequestSchema.parse(body);
 
     // Auth check
     const session = await getServerSession(authOptions);
     if (!session?.accessToken && process.env.VITEST !== 'true') {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const useMock = process.env.VITEST === 'true';
@@ -116,7 +129,7 @@ export async function POST(req: NextRequest) {
       start: '',
       end: '',
       duration: '',
-      rationale: `Scope: ${scope}, Events: ${currentEvents.length}, Proposals: ${proposedEvents.length}`
+      rationale: `Scope: ${scope}, Events: ${currentEvents.length}, Proposals: ${proposedEvents.length}`,
     });
 
     // Add current schedule section
@@ -128,7 +141,7 @@ export async function POST(req: NextRequest) {
       start: '',
       end: '',
       duration: '',
-      rationale: ''
+      rationale: '',
     });
 
     if (currentEvents.length === 0) {
@@ -140,10 +153,10 @@ export async function POST(req: NextRequest) {
         start: '',
         end: '',
         duration: '',
-        rationale: ''
+        rationale: '',
       });
     } else {
-      currentEvents.forEach(event => {
+      currentEvents.forEach((event) => {
         exportData.push({
           section: 'CURRENT_SCHEDULE',
           type: 'Event',
@@ -152,7 +165,7 @@ export async function POST(req: NextRequest) {
           start: event.start,
           end: event.end,
           duration: `${event.durationMinutes} min`,
-          rationale: ''
+          rationale: '',
         });
       });
     }
@@ -166,7 +179,7 @@ export async function POST(req: NextRequest) {
       start: '',
       end: '',
       duration: '',
-      rationale: ''
+      rationale: '',
     });
 
     conversation.forEach((message, index) => {
@@ -178,7 +191,7 @@ export async function POST(req: NextRequest) {
         start: message.timestamp || '',
         end: '',
         duration: '',
-        rationale: ''
+        rationale: '',
       });
     });
 
@@ -192,10 +205,10 @@ export async function POST(req: NextRequest) {
         start: '',
         end: '',
         duration: '',
-        rationale: ''
+        rationale: '',
       });
 
-      proposedEvents.forEach(event => {
+      proposedEvents.forEach((event) => {
         exportData.push({
           section: 'PROPOSED_CHANGES',
           type: 'Proposed Event',
@@ -204,7 +217,7 @@ export async function POST(req: NextRequest) {
           start: event.start,
           end: event.end,
           duration: `${event.durationMinutes} min`,
-          rationale: event.rationale || ''
+          rationale: event.rationale || '',
         });
       });
     }
@@ -213,7 +226,10 @@ export async function POST(req: NextRequest) {
     const csvContent = formatCSV(exportData);
 
     // Create filename with timestamp
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const timestamp = new Date()
+      .toISOString()
+      .replace(/[:.]/g, '-')
+      .slice(0, 19);
     const filename = `scheduling-transcript-${timestamp}.csv`;
 
     // Return CSV as downloadable file
@@ -225,7 +241,6 @@ export async function POST(req: NextRequest) {
         'Cache-Control': 'no-cache',
       },
     });
-
   } catch (error) {
     console.error('Error in /api/export/transcript:', error);
 

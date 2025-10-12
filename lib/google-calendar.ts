@@ -339,9 +339,12 @@ export class GoogleCalendarClient {
     // Handle both dateTime (for timed events) and date (for all-day events)
     const start = googleEvent.start.dateTime || googleEvent.start.date;
     const end = googleEvent.end.dateTime || googleEvent.end.date;
-    
+
     if (!start || !end) {
-      console.warn('Skipping event with missing start/end time:', googleEvent.summary);
+      console.warn(
+        'Skipping event with missing start/end time:',
+        googleEvent.summary
+      );
       // Return a minimal event that will be filtered out
       return {
         id: googleEvent.id || 'unknown',
@@ -353,7 +356,7 @@ export class GoogleCalendarClient {
         changeType: 'none',
       };
     }
-    
+
     const startTime = new Date(start).getTime();
     const endTime = new Date(end).getTime();
     const durationMinutes = Math.round((endTime - startTime) / 60000);

@@ -23,6 +23,7 @@ Task generation rules applied:
 - Tasks ordered by dependencies: Setup → Tests → Models → Services → Endpoints → Integration → Polish
 
 **COMMON AI MISTAKES**
+
 - NODE_ENV is never 'test', it is 'development' for tests!
 - Make sure tests conform to schemas in lib/
 
@@ -289,7 +290,7 @@ npm test
 
 # Run specific test suites
 npm run test:unit        # Models, schemas, utilities (fast)
-npm run test:contract    # API endpoint validation (medium) 
+npm run test:contract    # API endpoint validation (medium)
 npm run test:integration # Full workflow tests (medium)
 npm run test:e2e         # Browser automation (slow)
 
@@ -302,7 +303,7 @@ npm run test:watch
 For CI/CD or comprehensive validation, run tests in this order:
 
 1. **Unit tests first**: `npm run test:unit` - validates core logic
-2. **Contract tests**: `npm run test:contract` - ensures API compliance  
+2. **Contract tests**: `npm run test:contract` - ensures API compliance
 3. **Integration tests**: `npm run test:integration` - validates workflows
 4. **E2E tests**: `npm run test:e2e` - full browser testing
 
@@ -324,8 +325,9 @@ For CI/CD or comprehensive validation, run tests in this order:
 ### Performance Monitoring
 
 Key metrics to monitor during development:
+
 - Clarifying question response time: < 2s target
-- Proposal generation: < 60s target  
+- Proposal generation: < 60s target
 - TTS audio start: < 1.5s target
 - Calendar sync operations: exponential backoff on failures
 

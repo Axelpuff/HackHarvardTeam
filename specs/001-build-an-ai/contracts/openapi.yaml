@@ -55,7 +55,8 @@ components:
             durationMinutes: { type: integer }
         targetEventId: { type: string, nullable: true }
         rationale: { type: string }
-        accepted: { type: string, enum: [pending, accepted, rejected], nullable: true }
+        accepted:
+          { type: string, enum: [pending, accepted, rejected], nullable: true }
     Proposal:
       type: object
       required: [id, revision, changes, summary, sleepAssessment, status]
@@ -73,7 +74,8 @@ components:
           properties:
             estimatedSleepHours: { type: number }
             belowTarget: { type: boolean }
-        status: { type: string, enum: [draft, pending, approved, applied, discarded] }
+        status:
+          { type: string, enum: [draft, pending, approved, applied, discarded] }
     GenerateProposalRequest:
       type: object
       required: [problemText, events, preferences]
@@ -162,7 +164,15 @@ paths:
                 properties:
                   ok: { type: boolean, const: true }
                   question: { type: string }
-        '400': { description: Bad Request, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '400':
+          {
+            description: Bad Request,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: '#/components/schemas/ErrorResponse' } },
+              },
+          }
   /proposal/generate:
     post:
       summary: Generate or update a schedule proposal
@@ -249,4 +259,3 @@ paths:
                   events:
                     type: array
                     items: { $ref: '#/components/schemas/CalendarEvent' }
-

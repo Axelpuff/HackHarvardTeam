@@ -14,13 +14,16 @@ This is a **completely separate** Supabase integration that doesn't interfere wi
 ## 🚀 Quick Start
 
 ### 1. Install Dependencies
+
 ```bash
 cd supabase-integration
 pip install -r requirements.txt
 ```
 
 ### 2. Set Up Environment
+
 Copy `env_example.txt` to `.env` and add your API keys:
+
 ```bash
 # Copy the example file
 cp env_example.txt .env
@@ -29,17 +32,20 @@ cp env_example.txt .env
 ```
 
 ### 3. Set Up Supabase Database
+
 1. Create a Supabase project at [supabase.com](https://supabase.com)
 2. Go to SQL Editor in your Supabase dashboard
 3. Copy and paste the entire contents of `database_schema.sql`
 4. Click "Run" to create all tables and functions
 
 ### 4. Test the Integration
+
 ```bash
 python test_integration.py
 ```
 
 ### 5. Run the AI Planning System
+
 ```bash
 python ai_planning_system.py
 ```
@@ -47,17 +53,20 @@ python ai_planning_system.py
 ## 🎯 Features
 
 ### Vector Similarity Search
+
 - **Semantic matching** of user requests
 - **Context-aware** plan generation
 - **Learning from past interactions**
 
 ### Database Operations
+
 - **Store and retrieve** planning snippets
 - **User routine tracking** with time windows
 - **Past interaction learning**
 - **Coaching reflections**
 
 ### AI Integration
+
 - **Gemini-powered embeddings** (768-dimensional)
 - **Intelligent plan matching**
 - **Context-aware responses**
@@ -65,6 +74,7 @@ python ai_planning_system.py
 ## 📊 Database Schema
 
 ### Tables
+
 - **`gc_events`** - Calendar events (read-only)
 - **`utterances`** - User transcripts with embeddings
 - **`routines`** - User habitual patterns
@@ -72,6 +82,7 @@ python ai_planning_system.py
 - **`reflections`** - Coaching memory
 
 ### RPC Functions
+
 - **`is_light_next_24h()`** - Check schedule load
 - **`match_snippets()`** - Find similar plan snippets
 - **`match_routines()`** - Find user routines
@@ -80,6 +91,7 @@ python ai_planning_system.py
 ## 🔧 Usage Examples
 
 ### Basic Planning Workflow
+
 ```python
 from ai_planning_system import AIPlanningSystem
 import asyncio
@@ -93,6 +105,7 @@ asyncio.run(main())
 ```
 
 ### Direct Database Operations
+
 ```python
 from supabase_client import SupabaseClient
 from embedding_service import EmbeddingService
@@ -125,11 +138,13 @@ snippets = await client.match_snippets(embedding, k=3)
 ## 🔍 Testing
 
 Run the comprehensive test suite:
+
 ```bash
 python test_integration.py
 ```
 
 Tests include:
+
 - ✅ Configuration validation
 - ✅ Supabase connection
 - ✅ Embedding generation
@@ -137,15 +152,15 @@ Tests include:
 
 ## 📚 Files Overview
 
-| File | Purpose |
-|------|---------|
-| `supabase_client.py` | Database operations |
-| `embedding_service.py` | AI embeddings |
-| `ai_planning_system.py` | Main system |
-| `database_schema.sql` | Database setup |
-| `test_integration.py` | Test suite |
-| `config.py` | Configuration |
-| `requirements.txt` | Dependencies |
+| File                    | Purpose             |
+| ----------------------- | ------------------- |
+| `supabase_client.py`    | Database operations |
+| `embedding_service.py`  | AI embeddings       |
+| `ai_planning_system.py` | Main system         |
+| `database_schema.sql`   | Database setup      |
+| `test_integration.py`   | Test suite          |
+| `config.py`             | Configuration       |
+| `requirements.txt`      | Dependencies        |
 
 ## 🎉 Ready to Use!
 

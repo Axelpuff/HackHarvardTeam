@@ -37,7 +37,7 @@ describe('Diff Utilities', () => {
       ];
 
       const diff = diffEvents(current, proposed);
-      
+
       expect(diff.added).toHaveLength(1);
       expect(diff.added[0].id).toBe('event-2');
       expect(diff.removed).toHaveLength(0);
@@ -80,7 +80,7 @@ describe('Diff Utilities', () => {
       ];
 
       const diff = diffEvents(current, proposed);
-      
+
       expect(diff.removed).toHaveLength(1);
       expect(diff.removed[0].id).toBe('event-1');
       expect(diff.added).toHaveLength(0);
@@ -114,7 +114,7 @@ describe('Diff Utilities', () => {
       ];
 
       const diff = diffEvents(current, proposed);
-      
+
       expect(diff.moved).toHaveLength(1);
       expect(diff.moved[0].original.start).toBe(current[0].start);
       expect(diff.moved[0].updated.start).toBe(proposed[0].start);
@@ -149,7 +149,7 @@ describe('Diff Utilities', () => {
       ];
 
       const diff = diffEvents(current, proposed);
-      
+
       expect(diff.adjusted).toHaveLength(1);
       expect(diff.adjusted[0].original.title).toBe('Team Meeting');
       expect(diff.adjusted[0].updated.title).toBe('Extended Team Meeting');
@@ -189,7 +189,7 @@ describe('Diff Utilities', () => {
       ];
 
       const result = applyChangesToEvents(currentEvents, changes);
-      
+
       expect(result).toHaveLength(2);
       expect(result[1].title).toBe('New Meeting');
       expect(result[1].changeType).toBe('add');
@@ -234,7 +234,7 @@ describe('Diff Utilities', () => {
       ];
 
       const result = applyChangesToEvents(currentEvents, changes);
-      
+
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe('event-2');
     });
@@ -268,7 +268,7 @@ describe('Diff Utilities', () => {
       ];
 
       const result = applyChangesToEvents(currentEvents, changes);
-      
+
       expect(result).toHaveLength(1); // No changes applied
       expect(result[0].id).toBe('event-1');
     });
@@ -298,7 +298,7 @@ describe('Diff Utilities', () => {
       ];
 
       const conflicts = findTimeConflicts(events);
-      
+
       expect(conflicts).toHaveLength(1);
       expect(conflicts[0].overlapMinutes).toBe(30);
       expect(conflicts[0].event1.id).toBe('event-1');
@@ -328,7 +328,7 @@ describe('Diff Utilities', () => {
       ];
 
       const conflicts = findTimeConflicts(events);
-      
+
       expect(conflicts).toHaveLength(0);
     });
   });
@@ -357,7 +357,7 @@ describe('Diff Utilities', () => {
       ];
 
       const sleepEstimate = estimateSleepHours(events);
-      
+
       expect(sleepEstimate.estimatedSleepHours).toBe(11.0); // 21:00 to 08:00 next day
       expect(sleepEstimate.belowRecommended).toBe(false);
       expect(sleepEstimate.lastEventEnd).toBe('2025-10-04T21:00:00.000Z');
@@ -366,9 +366,9 @@ describe('Diff Utilities', () => {
 
     it('should return 9 hours for empty event list', () => {
       const events: CalendarEvent[] = [];
-      
+
       const sleepEstimate = estimateSleepHours(events);
-      
+
       expect(sleepEstimate.estimatedSleepHours).toBe(9);
       expect(sleepEstimate.belowRecommended).toBe(false);
       expect(sleepEstimate.lastEventEnd).toBeNull();
@@ -398,7 +398,7 @@ describe('Diff Utilities', () => {
       ];
 
       const sleepEstimate = estimateSleepHours(events);
-      
+
       expect(sleepEstimate.estimatedSleepHours).toBe(6.0);
       expect(sleepEstimate.belowRecommended).toBe(true);
     });

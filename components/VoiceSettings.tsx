@@ -14,7 +14,10 @@ interface VoiceSettingsProps {
   className?: string;
 }
 
-export function VoiceSettings({ onVoiceChange, className = '' }: VoiceSettingsProps) {
+export function VoiceSettings({
+  onVoiceChange,
+  className = '',
+}: VoiceSettingsProps) {
   const [voices, setVoices] = useState<Voice[]>([]);
   const [selectedVoice, setSelectedVoice] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
@@ -28,18 +31,20 @@ export function VoiceSettings({ onVoiceChange, className = '' }: VoiceSettingsPr
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const response = await fetch('/api/tts/voices');
       if (!response.ok) {
         throw new Error('Failed to load voices');
       }
-      
+
       const data = await response.json();
       setVoices(data.voices || []);
-      
+
       // Set default voice
       if (data.voices && data.voices.length > 0) {
-        const defaultVoice = data.voices.find((v: Voice) => v.category === 'premade') || data.voices[0];
+        const defaultVoice =
+          data.voices.find((v: Voice) => v.category === 'premade') ||
+          data.voices[0];
         setSelectedVoice(defaultVoice.voice_id);
         onVoiceChange?.(defaultVoice.voice_id);
       }
@@ -75,7 +80,7 @@ export function VoiceSettings({ onVoiceChange, className = '' }: VoiceSettingsPr
       <div className={`p-4 ${className}`}>
         <div className="text-red-600 text-sm">
           Error loading voices: {error}
-          <button 
+          <button
             onClick={loadVoices}
             className="ml-2 text-blue-600 hover:text-blue-800 underline"
           >
@@ -89,7 +94,7 @@ export function VoiceSettings({ onVoiceChange, className = '' }: VoiceSettingsPr
   return (
     <div className={`p-4 ${className}`}>
       <h3 className="text-sm font-medium text-gray-700 mb-3">Voice Settings</h3>
-      
+
       <div className="space-y-2">
         {voices.map((voice) => (
           <div
@@ -111,7 +116,10 @@ export function VoiceSettings({ onVoiceChange, className = '' }: VoiceSettingsPr
                   onChange={() => handleVoiceChange(voice.voice_id)}
                   className="text-blue-600 focus:ring-blue-500"
                 />
-                <label htmlFor={voice.voice_id} className="text-sm font-medium text-gray-900">
+                <label
+                  htmlFor={voice.voice_id}
+                  className="text-sm font-medium text-gray-900"
+                >
                   {voice.name}
                 </label>
                 <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
@@ -119,7 +127,7 @@ export function VoiceSettings({ onVoiceChange, className = '' }: VoiceSettingsPr
                 </span>
               </div>
             </div>
-            
+
             <TTSButton
               text="Hello! This is how I sound."
               voiceId={voice.voice_id}

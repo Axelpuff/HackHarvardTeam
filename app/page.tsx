@@ -7,37 +7,47 @@ import { type CalendarEvent } from '@/lib/models/calendarEvent';
 import { VoiceInput } from '@/components/VoiceInput';
 import RevokedBanner from '@/components/RevokedBanner';
 import { useCalendarEvents } from '@/hooks/useCalendarEvents';
+import { useConversationStore } from '@/state/conversation';
 
 export default function HomePage() {
   const { data: session, status } = useSession();
-  const [isConversationActive, setIsConversationActive] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [conversationMode, setConversationMode] = useState<
-    'none' | 'text' | 'audio'
-  >('none');
-  const [isSpeaking, setIsSpeaking] = useState(false); // stub for TTS playback state
-  const [messages, setMessages] = useState<
-    { role: 'system' | 'user' | 'assistant'; text: string }[]
-  >([
-    {
-      role: 'system',
-      text: "Hi! I'm here to help you optimize your schedule. What scheduling challenge are you facing?",
-    },
-  ]);
-  const [clarifications, setClarifications] = useState<string[]>([]);
-  const [problemText, setProblemText] = useState<string>('');
-  const [pendingInput, setPendingInput] = useState('');
-  const [isRequesting, setIsRequesting] = useState(false);
-  const [hasProposal, setHasProposal] = useState(false);
-  const [lastProposal, setLastProposal] = useState<any | null>(null);
-  // New state for applying changes & feedback
-  const [isApplying, setIsApplying] = useState(false);
-  const [applyError, setApplyError] = useState<string | null>(null);
-  const [applySuccess, setApplySuccess] = useState<string | null>(null);
-  const [lastAppliedChangeIds, setLastAppliedChangeIds] = useState<
-    string[] | null
-  >(null); // for potential undo
-  const [isExporting, setIsExporting] = useState(false);
+
+  // Zustand store for conversation state
+  const {
+    isConversationActive,
+    setIsConversationActive,
+    isDarkMode,
+    setIsDarkMode,
+    conversationMode,
+    setConversationMode,
+    isSpeaking,
+    setIsSpeaking,
+    messages,
+    setMessages,
+    addMessage,
+    clarifications,
+    setClarifications,
+    problemText,
+    setProblemText,
+    pendingInput,
+    setPendingInput,
+    isRequesting,
+    setIsRequesting,
+    hasProposal,
+    setHasProposal,
+    lastProposal,
+    setLastProposal,
+    isApplying,
+    setIsApplying,
+    applyError,
+    setApplyError,
+    applySuccess,
+    setApplySuccess,
+    lastAppliedChangeIds,
+    setLastAppliedChangeIds,
+    isExporting,
+    setIsExporting,
+  } = useConversationStore();
   const transcriptRef = useRef<HTMLDivElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -52,40 +62,43 @@ export default function HomePage() {
   } = useCalendarEvents();
 
   // Speak text using ElevenLabs TTS via server API
-  const speakText = useCallback(async (text: string) => {
-    if (!text) return;
-    try {
-      setIsSpeaking(true);
-      const res = await fetch('/api/tts/speak', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text }),
-      });
-      if (!res.ok) {
-        console.error('TTS error', await res.text());
+  const speakText = useCallback(
+    async (text: string) => {
+      if (!text) return;
+      try {
+        setIsSpeaking(true);
+        const res = await fetch('/api/tts/speak', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text }),
+        });
+        if (!res.ok) {
+          console.error('TTS error', await res.text());
+          setIsSpeaking(false);
+          return;
+        }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        if (!audioRef.current) {
+          audioRef.current = new Audio();
+        }
+        audioRef.current.src = url;
+        audioRef.current.onended = () => {
+          setIsSpeaking(false);
+          URL.revokeObjectURL(url);
+        };
+        audioRef.current.onerror = () => {
+          setIsSpeaking(false);
+          URL.revokeObjectURL(url);
+        };
+        await audioRef.current.play();
+      } catch (e) {
+        console.error('speakText error', e);
         setIsSpeaking(false);
-        return;
       }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      if (!audioRef.current) {
-        audioRef.current = new Audio();
-      }
-      audioRef.current.src = url;
-      audioRef.current.onended = () => {
-        setIsSpeaking(false);
-        URL.revokeObjectURL(url);
-      };
-      audioRef.current.onerror = () => {
-        setIsSpeaking(false);
-        URL.revokeObjectURL(url);
-      };
-      await audioRef.current.play();
-    } catch (e) {
-      console.error('speakText error', e);
-      setIsSpeaking(false);
-    }
-  }, []);
+    },
+    [setIsSpeaking]
+  );
   // Minimal send handler calling progressive proposal endpoint
   const handleSend = useCallback(
     async (textArg?: string) => {
@@ -93,7 +106,7 @@ export default function HomePage() {
       if (!text || isRequesting) return;
 
       // Append user message
-      setMessages((prev) => [...prev, { role: 'user', text }]);
+      addMessage({ role: 'user', text });
       setPendingInput('');
       setIsRequesting(true);
 
@@ -126,10 +139,7 @@ export default function HomePage() {
         if (data.status === 'clarify') {
           if (problemText) setClarifications(effectiveClarifications);
           const questionText = data.question as string;
-          setMessages((prev) => [
-            ...prev,
-            { role: 'assistant', text: questionText },
-          ]);
+          addMessage({ role: 'assistant', text: questionText });
           speakText(questionText);
         } else if (data.status === 'proposal') {
           setClarifications(effectiveClarifications);
@@ -137,10 +147,7 @@ export default function HomePage() {
           setLastProposal(data.proposal);
           const proposalMsg =
             'Generated a draft proposal with suggested changes.';
-          setMessages((prev) => [
-            ...prev,
-            { role: 'assistant', text: proposalMsg },
-          ]);
+          addMessage({ role: 'assistant', text: proposalMsg });
           speakText(proposalMsg);
 
           if (data.proposal?.changes && Array.isArray(data.proposal.changes)) {
@@ -213,13 +220,10 @@ export default function HomePage() {
         }
       } catch (err: any) {
         console.error('Conversation send error:', err);
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: 'assistant',
-            text: 'Sorry, I ran into an issue. Please try again.',
-          },
-        ]);
+        addMessage({
+          role: 'assistant',
+          text: 'Sorry, I ran into an issue. Please try again.',
+        });
       } finally {
         setIsRequesting(false);
       }
@@ -231,6 +235,14 @@ export default function HomePage() {
       clarifications,
       speakText,
       currentEvents,
+      conversationMode,
+      addMessage,
+      setPendingInput,
+      setIsRequesting,
+      setProblemText,
+      setClarifications,
+      setHasProposal,
+      setLastProposal,
     ]
   );
 
@@ -301,7 +313,7 @@ export default function HomePage() {
     } finally {
       setIsExporting(false);
     }
-  }, [isExporting, messages, proposedEvents]);
+  }, [isExporting, messages, proposedEvents, setIsExporting]);
 
   // Apply calendar changes handler
   const handleApplyChanges = useCallback(async () => {
@@ -335,7 +347,15 @@ export default function HomePage() {
     } finally {
       setIsApplying(false);
     }
-  }, [lastProposal, isApplying, refresh]);
+  }, [
+    lastProposal,
+    isApplying,
+    refresh,
+    setIsApplying,
+    setApplyError,
+    setApplySuccess,
+    setLastAppliedChangeIds,
+  ]);
 
   // useCalendarEvents performs the fetch on mount and handles revoked detection
 

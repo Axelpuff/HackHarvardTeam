@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
-import { createElevenLabsClient, MockElevenLabsClient } from '@/lib/elevenlabs-tts';
+import {
+  createElevenLabsClient,
+  MockElevenLabsClient,
+} from '@/lib/elevenlabs-tts';
 
 export async function GET() {
   try {
@@ -7,7 +10,9 @@ export async function GET() {
     const testMode = process.env.VITEST === 'true';
 
     // Create ElevenLabs client (use mock in test environment)
-    const ttsClient = testMode ? new MockElevenLabsClient() : createElevenLabsClient();
+    const ttsClient = testMode
+      ? new MockElevenLabsClient()
+      : createElevenLabsClient();
 
     // Get available voices
     const voices = await ttsClient.getVoices();

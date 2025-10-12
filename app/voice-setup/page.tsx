@@ -20,15 +20,20 @@ export default function VoiceSetupPage() {
     const isEdge = /Edge/.test(userAgent);
     const isFirefox = /Firefox/.test(userAgent);
     const isSafari = /Safari/.test(userAgent) && !/Chrome/.test(userAgent);
-    const isHTTPS = location.protocol === 'https:' || location.hostname === 'localhost';
-    
+    const isHTTPS =
+      location.protocol === 'https:' || location.hostname === 'localhost';
+
     // Check for microphone access
-    navigator.mediaDevices.getUserMedia({ audio: true })
-      .then(() => setBrowserInfo(prev => ({ ...prev, hasMicrophone: true })))
-      .catch(() => setBrowserInfo(prev => ({ ...prev, hasMicrophone: false })));
+    navigator.mediaDevices
+      .getUserMedia({ audio: true })
+      .then(() => setBrowserInfo((prev) => ({ ...prev, hasMicrophone: true })))
+      .catch(() =>
+        setBrowserInfo((prev) => ({ ...prev, hasMicrophone: false }))
+      );
 
     // Check for speech recognition support
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
     const speechSupported = !!SpeechRecognition;
 
     setBrowserInfo({
@@ -44,26 +49,29 @@ export default function VoiceSetupPage() {
   }, []);
 
   const getBrowserRecommendation = () => {
-    if (browserInfo.isChrome) return "✅ Chrome - Best support for voice features";
-    if (browserInfo.isEdge) return "✅ Edge - Good support for voice features";
-    if (browserInfo.isFirefox) return "⚠️ Firefox - Limited voice support, try Chrome";
-    if (browserInfo.isSafari) return "❌ Safari - No voice support, try Chrome";
-    return "❓ Unknown browser - Try Chrome or Edge for best results";
+    if (browserInfo.isChrome)
+      return '✅ Chrome - Best support for voice features';
+    if (browserInfo.isEdge) return '✅ Edge - Good support for voice features';
+    if (browserInfo.isFirefox)
+      return '⚠️ Firefox - Limited voice support, try Chrome';
+    if (browserInfo.isSafari) return '❌ Safari - No voice support, try Chrome';
+    return '❓ Unknown browser - Try Chrome or Edge for best results';
   };
 
   const getHTTPSStatus = () => {
-    if (browserInfo.isHTTPS) return "✅ HTTPS - Voice features will work";
-    return "⚠️ HTTP - Voice features require HTTPS in production";
+    if (browserInfo.isHTTPS) return '✅ HTTPS - Voice features will work';
+    return '⚠️ HTTP - Voice features require HTTPS in production';
   };
 
   const getMicrophoneStatus = () => {
-    if (browserInfo.hasMicrophone) return "✅ Microphone access granted";
-    return "❌ Microphone access denied - Please allow microphone access";
+    if (browserInfo.hasMicrophone) return '✅ Microphone access granted';
+    return '❌ Microphone access denied - Please allow microphone access';
   };
 
   const getSpeechStatus = () => {
-    if (browserInfo.speechSupported) return "✅ Speech Recognition API supported";
-    return "❌ Speech Recognition API not supported";
+    if (browserInfo.speechSupported)
+      return '✅ Speech Recognition API supported';
+    return '❌ Speech Recognition API not supported';
   };
 
   return (
@@ -73,7 +81,7 @@ export default function VoiceSetupPage() {
           <h1 className="text-2xl font-bold text-gray-900 mb-6">
             Voice Setup & Browser Compatibility
           </h1>
-          
+
           <div className="space-y-6">
             {/* Browser Detection */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -83,19 +91,27 @@ export default function VoiceSetupPage() {
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-blue-800">Browser:</span>
-                  <span className="text-blue-800 font-medium">{getBrowserRecommendation()}</span>
+                  <span className="text-blue-800 font-medium">
+                    {getBrowserRecommendation()}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-blue-800">HTTPS:</span>
-                  <span className="text-blue-800 font-medium">{getHTTPSStatus()}</span>
+                  <span className="text-blue-800 font-medium">
+                    {getHTTPSStatus()}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-blue-800">Microphone:</span>
-                  <span className="text-blue-800 font-medium">{getMicrophoneStatus()}</span>
+                  <span className="text-blue-800 font-medium">
+                    {getMicrophoneStatus()}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-blue-800">Speech API:</span>
-                  <span className="text-blue-800 font-medium">{getSpeechStatus()}</span>
+                  <span className="text-blue-800 font-medium">
+                    {getSpeechStatus()}
+                  </span>
                 </div>
               </div>
             </div>
@@ -106,11 +122,26 @@ export default function VoiceSetupPage() {
                 If Voice is Not Working:
               </h3>
               <ol className="text-yellow-800 space-y-2 list-decimal list-inside">
-                <li><strong>Use Chrome or Edge:</strong> These browsers have the best voice support</li>
-                <li><strong>Allow Microphone Access:</strong> Click the microphone icon in your browser's address bar</li>
-                <li><strong>Use HTTPS:</strong> Voice features require HTTPS in production</li>
-                <li><strong>Check Permissions:</strong> Go to browser settings and allow microphone access</li>
-                <li><strong>Try Incognito Mode:</strong> Sometimes helps with permission issues</li>
+                <li>
+                  <strong>Use Chrome or Edge:</strong> These browsers have the
+                  best voice support
+                </li>
+                <li>
+                  <strong>Allow Microphone Access:</strong> Click the microphone
+                  icon in your browser's address bar
+                </li>
+                <li>
+                  <strong>Use HTTPS:</strong> Voice features require HTTPS in
+                  production
+                </li>
+                <li>
+                  <strong>Check Permissions:</strong> Go to browser settings and
+                  allow microphone access
+                </li>
+                <li>
+                  <strong>Try Incognito Mode:</strong> Sometimes helps with
+                  permission issues
+                </li>
               </ol>
             </div>
 
@@ -134,7 +165,9 @@ export default function VoiceSetupPage() {
                       <td className="py-2">Chrome</td>
                       <td className="text-center py-2">✅ Excellent</td>
                       <td className="text-center py-2">✅ Excellent</td>
-                      <td className="text-center py-2 text-green-600">Recommended</td>
+                      <td className="text-center py-2 text-green-600">
+                        Recommended
+                      </td>
                     </tr>
                     <tr className="border-b">
                       <td className="py-2">Edge</td>
@@ -146,13 +179,17 @@ export default function VoiceSetupPage() {
                       <td className="py-2">Firefox</td>
                       <td className="text-center py-2">⚠️ Limited</td>
                       <td className="text-center py-2">✅ Good</td>
-                      <td className="text-center py-2 text-yellow-600">Partial</td>
+                      <td className="text-center py-2 text-yellow-600">
+                        Partial
+                      </td>
                     </tr>
                     <tr>
                       <td className="py-2">Safari</td>
                       <td className="text-center py-2">❌ No</td>
                       <td className="text-center py-2">✅ Good</td>
-                      <td className="text-center py-2 text-red-600">Not Recommended</td>
+                      <td className="text-center py-2 text-red-600">
+                        Not Recommended
+                      </td>
                     </tr>
                   </tbody>
                 </table>
@@ -165,10 +202,22 @@ export default function VoiceSetupPage() {
                 Quick Fixes
               </h3>
               <div className="space-y-2 text-green-800">
-                <p><strong>1. Try Chrome:</strong> Download Chrome for the best voice experience</p>
-                <p><strong>2. Allow Microphone:</strong> Click the microphone icon in your browser's address bar</p>
-                <p><strong>3. Use HTTPS:</strong> Make sure you're using https:// in production</p>
-                <p><strong>4. Check Settings:</strong> Go to Chrome Settings → Privacy → Site Settings → Microphone</p>
+                <p>
+                  <strong>1. Try Chrome:</strong> Download Chrome for the best
+                  voice experience
+                </p>
+                <p>
+                  <strong>2. Allow Microphone:</strong> Click the microphone
+                  icon in your browser's address bar
+                </p>
+                <p>
+                  <strong>3. Use HTTPS:</strong> Make sure you're using https://
+                  in production
+                </p>
+                <p>
+                  <strong>4. Check Settings:</strong> Go to Chrome Settings →
+                  Privacy → Site Settings → Microphone
+                </p>
               </div>
             </div>
           </div>

@@ -97,7 +97,7 @@ export function ConversationPanel({
           )}
         </div>
       </div>
-      
+
       <div className="flex flex-col h-80">
         {/* Transcript Area */}
         <div
@@ -154,7 +154,7 @@ export function ConversationPanel({
               </div>
             ))
           )}
-          
+
           {isProcessing && (
             <div className="flex justify-start">
               <div className="bg-white/70 dark:bg-gray-900/60 shadow-sm backdrop-blur-sm rounded-lg px-4 py-2">
@@ -180,7 +180,7 @@ export function ConversationPanel({
         </div>
 
         {/* Input Area */}
-  <div className="p-4 conversation-input-bg">
+        <div className="p-4 conversation-input-bg">
           <form onSubmit={handleSubmit} className="flex space-x-2">
             <input
               type="text"
@@ -194,7 +194,7 @@ export function ConversationPanel({
               disabled={isListening || isProcessing}
               className="flex-1 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500"
             />
-            
+
             {supportsSpeech && (
               <button
                 type="button"
@@ -209,7 +209,7 @@ export function ConversationPanel({
                 {isListening ? '🎤' : '🎙️'}
               </button>
             )}
-            
+
             <button
               type="submit"
               disabled={!inputValue.trim() || isProcessing || isListening}
@@ -218,7 +218,7 @@ export function ConversationPanel({
               Send
             </button>
           </form>
-          
+
           {isListening && (
             <div className="mt-2 text-center">
               <div className="inline-flex items-center text-sm text-red-600 dark:text-red-500">

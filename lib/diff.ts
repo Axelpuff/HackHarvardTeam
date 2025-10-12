@@ -17,15 +17,19 @@ export interface DiffResult {
 /**
  * Compare two sets of calendar events and identify the differences
  */
-export function diffEvents(current: CalendarEvent[], proposed: CalendarEvent[]): DiffResult {
+export function diffEvents(
+  current: CalendarEvent[],
+  proposed: CalendarEvent[]
+): DiffResult {
   const added: CalendarEvent[] = [];
   const removed: CalendarEvent[] = [];
   const moved: Array<{ original: CalendarEvent; updated: CalendarEvent }> = [];
-  const adjusted: Array<{ original: CalendarEvent; updated: CalendarEvent }> = [];
+  const adjusted: Array<{ original: CalendarEvent; updated: CalendarEvent }> =
+    [];
 
   // Create maps for efficient lookup
-  const currentMap = new Map(current.map(event => [event.id, event]));
-  const proposedMap = new Map(proposed.map(event => [event.id, event]));
+  const currentMap = new Map(current.map((event) => [event.id, event]));
+  const proposedMap = new Map(proposed.map((event) => [event.id, event]));
 
   // Find added events (exist in proposed but not in current)
   for (const event of proposed) {
@@ -45,9 +49,10 @@ export function diffEvents(current: CalendarEvent[], proposed: CalendarEvent[]):
   for (const event of current) {
     const proposedEvent = proposedMap.get(event.id);
     if (proposedEvent) {
-      const hasTimeChange = event.start !== proposedEvent.start || event.end !== proposedEvent.end;
+      const hasTimeChange =
+        event.start !== proposedEvent.start || event.end !== proposedEvent.end;
       const hasTitleChange = event.title !== proposedEvent.title;
-      
+
       if (hasTimeChange && !hasTitleChange) {
         // Same title, different time = moved
         moved.push({ original: event, updated: proposedEvent });
@@ -90,14 +95,16 @@ export function applyChangesToEvents(
 
       case 'remove':
         if (change.targetEventId) {
-          result = result.filter(event => event.id !== change.targetEventId);
+          result = result.filter((event) => event.id !== change.targetEventId);
         }
         break;
 
       case 'move':
       case 'adjust':
         if (change.targetEventId) {
-          const eventIndex = result.findIndex(event => event.id === change.targetEventId);
+          const eventIndex = result.findIndex(
+            (event) => event.id === change.targetEventId
+          );
           if (eventIndex !== -1) {
             result[eventIndex] = {
               ...result[eventIndex],
@@ -137,11 +144,14 @@ export function findTimeConflicts(events: CalendarEvent[]): Array<{
       const end2 = new Date(event2.end);
 
       // Check for overlap
-      const overlapStart = new Date(Math.max(start1.getTime(), start2.getTime()));
+      const overlapStart = new Date(
+        Math.max(start1.getTime(), start2.getTime())
+      );
       const overlapEnd = new Date(Math.min(end1.getTime(), end2.getTime()));
 
       if (overlapStart < overlapEnd) {
-        const overlapMinutes = (overlapEnd.getTime() - overlapStart.getTime()) / (1000 * 60);
+        const overlapMinutes =
+          (overlapEnd.getTime() - overlapStart.getTime()) / (1000 * 60);
         conflicts.push({
           event1,
           event2,
@@ -177,7 +187,9 @@ export function estimateSleepHours(
   }
 
   // Sort events by start time
-  const sortedEvents = events.slice().sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+  const sortedEvents = events
+    .slice()
+    .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
 
   const firstEvent = sortedEvents[0];
   const lastEvent = sortedEvents[sortedEvents.length - 1];
@@ -194,7 +206,9 @@ export function estimateSleepHours(
     firstEventStartTime.setDate(firstEventStartTime.getDate() + 1);
   }
 
-  const sleepHours = (firstEventStartTime.getTime() - lastEventEndTime.getTime()) / (1000 * 60 * 60);
+  const sleepHours =
+    (firstEventStartTime.getTime() - lastEventEndTime.getTime()) /
+    (1000 * 60 * 60);
   const estimatedSleepHours = Math.max(0, sleepHours);
   const belowRecommended = estimatedSleepHours < 7;
 

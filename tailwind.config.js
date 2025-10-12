@@ -16,14 +16,17 @@ module.exports = {
         'brand-teal': '#2a5e6d',
       },
       backgroundImage: {
-        'gradient-brand': 'linear-gradient(135deg, #6fdeb6 0%, #81cff5 50%, #2a5e6d 100%)',
-        'gradient-brand-reverse': 'linear-gradient(135deg, #2a5e6d 0%, #81cff5 50%, #6fdeb6 100%)',
+        'gradient-brand':
+          'linear-gradient(135deg, #6fdeb6 0%, #81cff5 50%, #2a5e6d 100%)',
+        'gradient-brand-reverse':
+          'linear-gradient(135deg, #2a5e6d 0%, #81cff5 50%, #6fdeb6 100%)',
         'gradient-dark': 'linear-gradient(135deg, #0d3c42 0%, #2a5e6d 100%)',
         'gradient-subtle': 'linear-gradient(135deg, #0d3c42 0%, #1a4a52 100%)',
-        'gradient-super-subtle': 'linear-gradient(90deg, #09181aff 0%, #0e2c2fff 90%, #1a4a52 95%, #125767ff 97%, #81cff5 98%, #6fdeb6 100%)',
+        'gradient-super-subtle':
+          'linear-gradient(90deg, #09181aff 0%, #0e2c2fff 90%, #1a4a52 95%, #125767ff 97%, #81cff5 98%, #6fdeb6 100%)',
       },
       animation: {
-        'blob': 'blob 7s infinite',
+        blob: 'blob 7s infinite',
       },
       keyframes: {
         blob: {

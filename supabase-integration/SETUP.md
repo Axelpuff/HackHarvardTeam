@@ -3,6 +3,7 @@
 ## Quick Start
 
 1. **Install dependencies:**
+
    ```bash
    cd supabase-integration
    pip install -r requirements.txt
@@ -20,6 +21,7 @@
 ## Dependencies
 
 This folder has its own `requirements.txt` with Supabase-specific packages:
+
 - `supabase` - Database client
 - `google-auth` - Google Calendar authentication
 - `google-generativeai` - Gemini AI integration

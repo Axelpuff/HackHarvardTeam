@@ -41,7 +41,12 @@ export async function POST(request: NextRequest) {
       process.env.VITEST === 'true'
         ? new MockGeminiClient()
         : createGeminiClient();
-    console.log('Using Gemini client:', geminiClient instanceof MockGeminiClient ? 'MockGeminiClient' : 'RealGeminiClient');
+    console.log(
+      'Using Gemini client:',
+      geminiClient instanceof MockGeminiClient
+        ? 'MockGeminiClient'
+        : 'RealGeminiClient'
+    );
     // Generate proposal using Gemini
     const rawProposal = await geminiClient.generateProposal({
       problemText: requestData.problemText,

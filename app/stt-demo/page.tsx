@@ -12,7 +12,7 @@ export default function STTDemoPage() {
   const handleTranscript = (transcript: string) => {
     // Prevent duplicate submissions
     if (transcript.trim() && transcript !== lastTranscript) {
-      setTranscripts(prev => [...prev, transcript]);
+      setTranscripts((prev) => [...prev, transcript]);
       setLastTranscript(transcript);
       setCurrentTranscript('');
     }
@@ -29,7 +29,7 @@ export default function STTDemoPage() {
           <h1 className="text-2xl font-bold text-gray-900 mb-6">
             Speech-to-Text (STT) Integration Demo
           </h1>
-          
+
           <div className="space-y-6">
             {/* Basic Voice Input */}
             <div className="bg-gray-50 rounded-lg p-4">
@@ -122,7 +122,7 @@ export default function STTDemoPage() {
               </h3>
               <div className="bg-gray-800 rounded-lg p-4">
                 <pre className="text-sm text-gray-100 overflow-x-auto">
-{`// Import the STT components
+                  {`// Import the STT components
 import { VoiceInput } from '@/components/VoiceInput';
 import { useVoiceInput } from '@/lib/stt-integration';
 
